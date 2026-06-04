@@ -1,0 +1,2099 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<link rel="icon" href="https://freshket.co/favicon.ico" type="image/x-icon" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Freshket KAM Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;font-family:'Figtree',sans-serif;font-size:14px;background:#f4f5f7;color:#1d2026;}
+.topbar{display:flex;align-items:center;gap:12px;padding:0 20px;height:52px;background:#fff;border-bottom:1px solid #e0e3e9;position:sticky;top:0;z-index:100;flex-shrink:0;}
+.logo{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;color:#0073ea;text-decoration:none;}
+.logo-icon{width:28px;height:28px;background:#0073ea;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;}
+.topbar-sep{width:1px;height:24px;background:#e0e3e9;}
+.board-name{font-size:15px;font-weight:600;color:#1d2026;}
+.topbar-right{display:flex;align-items:center;gap:8px;margin-left:auto;}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:background .12s;}
+.btn-ghost{background:transparent;color:#676879;border:1px solid #e0e3e9;}
+.btn-ghost:hover{background:#f0f2f5;}
+.btn-primary{background:#0073ea;color:#fff;}
+.btn-primary:hover{background:#0060c0;}
+.btn-danger{background:#e44258;color:#fff;}
+.btn-danger:hover{background:#c43350;}
+.week-banner{display:flex;align-items:center;gap:12px;padding:8px 20px;background:#fff;border-bottom:1px solid #e0e3e9;}
+.week-label{font-size:13px;font-weight:500;color:#676879;}
+.week-select-wrap{display:flex;align-items:center;gap:6px;}
+.week-select{font-size:13px;font-weight:600;color:#1d2026;border:1px solid #c5c7d4;border-radius:6px;padding:5px 10px;background:#f4f5f7;cursor:pointer;}
+.week-select:focus{outline:none;border-color:#0073ea;}
+.week-badge{font-size:12px;padding:3px 10px;border-radius:99px;background:#e8f5e9;color:#2e7d32;font-weight:500;}
+.week-action{font-size:12px;color:#0073ea;cursor:pointer;font-weight:500;background:none;border:none;}
+.week-action:hover{text-decoration:underline;}
+.week-stats{display:flex;align-items:center;gap:16px;margin-left:auto;}
+.wstat{font-size:12px;color:#676879;}
+.wstat span{font-weight:600;color:#1d2026;margin-left:3px;}
+.wstat-green span{color:#00854d;}
+.wstat-blue span{color:#0073ea;}
+.wstat-amber span{color:#d4831a;}
+.wstat-red span{color:#e44258;}
+.toolbar{display:flex;align-items:center;gap:8px;padding:8px 20px;background:#fff;border-bottom:1px solid #e0e3e9;flex-wrap:wrap;}
+.search-wrap{position:relative;display:flex;align-items:center;}
+.search-input{padding:6px 10px;border-radius:6px;border:1px solid #e0e3e9;font-size:13px;width:200px;background:#f4f5f7;}
+.search-input:focus{outline:none;border-color:#0073ea;background:#fff;}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:6px;font-size:13px;font-weight:500;border:1px solid #e0e3e9;background:#f4f5f7;color:#676879;cursor:pointer;transition:all .1s;}
+.chip:hover{background:#e8f0fe;border-color:#0073ea;color:#0073ea;}
+.chip.on{background:#0073ea;border-color:#0073ea;color:#fff;}
+.filter-sel{font-size:13px;padding:6px 10px;border-radius:6px;border:1px solid #e0e3e9;background:#f4f5f7;color:#676879;cursor:pointer;}
+.filter-sel:focus{outline:none;border-color:#0073ea;}
+.toolbar-sep{width:1px;height:20px;background:#e0e3e9;}
+.toolbar-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.item-count{font-size:12px;color:#676879;}
+.ch-chk-freeze{width:40px;justify-content:center;position:sticky;left:0;z-index:22;background:#f4f5f7;}
+.cell-chk-freeze{width:40px;justify-content:center;position:sticky;left:0;z-index:11;background:#fff;}
+.row:hover .cell-chk-freeze{background:#f6f7fb;}
+.ch-acct-freeze{width:240px;position:sticky;left:40px;z-index:22;background:#f4f5f7;border-right:2px solid #c5c7d4!important;}
+.cell-acct-freeze{width:240px;flex-direction:column;align-items:flex-start;justify-content:center;padding:6px 12px;position:sticky;left:40px;z-index:11;background:#fff;border-right:2px solid #e0e3e9!important;}
+.row:hover .cell-acct-freeze{background:#f6f7fb;}
+.cell-acct-freeze::after,.ch-acct-freeze::after{content:'';position:absolute;top:0;right:-6px;width:6px;height:100%;background:linear-gradient(to right,rgba(0,0,0,.06),transparent);pointer-events:none;}
+.cell-editable select{width:100%;font-size:12px;padding:3px 6px;border-radius:5px;border:1px solid #c5c7d4;background:#fff;cursor:pointer;font-family:'Figtree',sans-serif;}
+.cell-editable select:focus{outline:none;border-color:#0073ea;}
+.grid-wrap{overflow-x:auto;overflow-y:auto;flex:1;}
+.grid{min-width:1350px;}
+
+.col-heads{display:flex;align-items:stretch;background:#f4f5f7;border-bottom:2px solid #c5c7d4;position:sticky;top:0;z-index:50;}
+.ch{font-size:12px;font-weight:600;color:#676879;padding:0 12px;height:36px;display:flex;align-items:center;flex-shrink:0;border-right:1px solid #e0e3e9;user-select:none;white-space:nowrap;letter-spacing:.02em;text-transform:uppercase;}
+.ch:last-child{border-right:none;}
+.ch.sort{cursor:pointer;}
+.ch.sort:hover{background:#e8f0fe;color:#0073ea;}
+.w-status{width:160px;}.w-opp{width:100px;}.w-pri{width:76px;justify-content:center;}.w-diff{width:100px;}.w-prog{width:150px;}.w-upd{width:240px;}.w-note{width:220px;}.w-mom{width:90px;flex-shrink:0;}
+.edit-row{background:#fffdf5!important;}.edit-row:hover{background:#fffbec!important;}
+.cell-editable select{width:100%;font-size:12px;padding:3px 5px;border-radius:5px;border:1px solid #ffb74d;background:#fffbf0;cursor:pointer;font-family:'Figtree',sans-serif;}
+.cell-editable select:focus{outline:none;border-color:#e65100;background:#fff;}
+.group-header{display:flex;align-items:center;gap:8px;padding:7px 16px;background:#f0f2f5;border-bottom:1px solid #e0e3e9;border-top:1px solid #e0e3e9;cursor:pointer;position:sticky;top:36px;z-index:40;}
+.group-dot{width:12px;height:12px;border-radius:3px;flex-shrink:0;}
+.group-name{font-size:13px;font-weight:700;color:#1d2026;}
+.group-pill{font-size:11px;font-weight:500;padding:2px 8px;border-radius:99px;background:#fff;border:1px solid #e0e3e9;color:#676879;}
+.group-sum{display:flex;align-items:center;gap:12px;margin-left:auto;}
+.gsum-item{font-size:12px;color:#676879;}.gsum-item span{font-weight:600;}
+.row{display:flex;align-items:stretch;border-bottom:1px solid #e0e3e9;background:#fff;min-height:44px;}
+.row:hover{background:#f6f7fb;}.row.sel{background:#e8f0fe;}
+.cell{font-size:13px;color:#1d2026;padding:0 12px;display:flex;align-items:center;flex-shrink:0;border-right:1px solid #e0e3e9;min-height:44px;overflow:hidden;}
+.cell:last-child{border-right:none;}
+.cell input[type=checkbox]{cursor:pointer;accent-color:#0073ea;width:15px;height:15px;}
+.acct-name{font-size:13px;font-weight:500;line-height:1.4;color:#1d2026;}
+.acct-note{font-size:11px;color:#676879;line-height:1.4;margin-top:2px;}
+.cell-upd{width:240px;padding:4px 8px;flex-shrink:0;}
+.cell-upd textarea{width:100%;border:none;background:transparent;font-size:12px;color:#1d2026;font-family:'Figtree',sans-serif;resize:none;line-height:1.5;padding:4px;border-radius:4px;min-height:36px;}
+.cell-upd textarea:focus{outline:none;background:#f0f4ff;border:1px solid #0073ea;}
+.cell-upd textarea.has-update{background:#fff9e6;border:1px solid #f9c74f;}
+.cell-sku{width:160px;padding:4px 8px;}
+.cell-sku input{width:100%;border:none;background:transparent;font-size:12px;color:#1d2026;font-family:'Figtree',sans-serif;padding:6px 4px;border-radius:4px;}
+.cell-sku input:focus{outline:none;background:#f0f4ff;border:1px solid #0073ea;}
+.cell-sku input.has-sku{background:#e8f5e9;}
+.tag{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:4px;font-size:12px;font-weight:500;white-space:nowrap;}
+.t-maintain{background:#e6f2ff;color:#0060c0;}.t-uplift{background:#e8f5e9;color:#1b5e20;}
+.t-winback{background:#fff8e1;color:#f57f17;}.t-unknown{background:#f0f2f5;color:#676879;}
+.t-skip{background:#ffebee;color:#c62828;}.t-debt{background:#ffebee;color:#c62828;}
+.opp-wrap{display:flex;align-items:center;gap:5px;}
+.opp-circle{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.opp-high .opp-circle{background:#e44258;}.opp-med .opp-circle{background:#d4831a;}.opp-low .opp-circle{background:#c5c7d4;}
+.opp-high .opp-lbl{color:#c62828;font-size:12px;font-weight:500;}.opp-med .opp-lbl{color:#e65100;font-size:12px;font-weight:500;}.opp-low .opp-lbl{color:#676879;font-size:12px;}
+.pri{display:inline-flex;align-items:center;justify-content:center;width:32px;height:22px;border-radius:4px;font-size:11px;font-weight:700;}
+.pri-p1{background:#ffebee;color:#c62828;}.pri-p2{background:#fff3e0;color:#e65100;}.pri-p3{background:#f0f2f5;color:#676879;}
+.diff-wrap{display:flex;align-items:center;gap:3px;}
+.diff-bar{width:9px;height:9px;border-radius:2px;}
+.diff-hard .diff-bar{background:#e44258;}.diff-hard .diff-bar.off{background:#fce4e8;}
+.diff-med .diff-bar{background:#d4831a;}.diff-med .diff-bar.off{background:#fdebd0;}
+.diff-easy .diff-bar{background:#00854d;}.diff-easy .diff-bar.off{background:#c8e6c9;}
+.diff-lbl{font-size:11px;color:#676879;margin-left:3px;}
+.av{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;}
+.av-Dent{background:#bbdefb;color:#0d47a1;}.av-BB{background:#d1c4e9;color:#311b92;}.av-Ning{background:#c8e6c9;color:#1b5e20;}
+.av-Tos{background:#ffe0b2;color:#bf360c;}.av-Kwang{background:#f8bbd0;color:#880e4f;}.av-Mild{background:#dcedc8;color:#33691e;}
+.av-Nitcha{background:#cffafe;color:#0e7490;}
+.prog-wrap{display:flex;align-items:center;gap:7px;width:100%;}
+.prog-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.prog-sel{font-size:12px;border:1px solid #e0e3e9;border-radius:5px;padding:4px 6px;background:#f4f5f7;cursor:pointer;flex:1;font-family:'Figtree',sans-serif;}
+.prog-sel:focus{outline:none;border-color:#0073ea;}
+:root{--w-upd:240px;--w-mom:90px;}
+.w-upd{width:var(--w-upd);}
+.cell-upd{width:var(--w-upd);padding:4px 8px;flex-shrink:0;}
+.w-mom{width:var(--w-mom);flex-shrink:0;}
+.cell.w-mom{width:var(--w-mom);}
+.col-resize-wrap{position:relative;display:inline-flex;align-items:center;width:100%;height:100%;}
+.rhandle{position:absolute;right:-3px;top:0;width:7px;height:100%;cursor:col-resize;z-index:10;background:transparent;}
+.rhandle:hover{background:rgba(0,115,234,.25);border-radius:2px;}
+
+.pr-btn{padding:10px 12px;border-radius:8px;border:1.5px solid #e0e3e9;background:#f9fafb;font-size:13px;font-weight:500;cursor:pointer;text-align:center;transition:all .1s;}
+.pr-btn:hover{border-color:#e44258;background:#ffebee;color:#c62828;}
+.pr-btn.sel{border-color:#e44258;background:#e44258;color:#fff;}
+.footer{display:flex;align-items:center;gap:10px;padding:10px 20px;background:#fff;border-top:1px solid #e0e3e9;font-size:13px;color:#676879;flex-shrink:0;}
+.footer-right{margin-left:auto;display:flex;align-items:center;gap:6px;}
+.page-btn{padding:5px 10px;border-radius:5px;border:1px solid #e0e3e9;background:#f4f5f7;font-size:12px;cursor:pointer;color:#676879;}
+.page-btn:hover{background:#e8f0fe;border-color:#0073ea;color:#0073ea;}
+.page-btn:disabled{opacity:.4;cursor:default;}
+.per-page-sel{font-size:12px;padding:4px 6px;border-radius:5px;border:1px solid #e0e3e9;background:#f4f5f7;color:#676879;}
+.add-row{display:flex;align-items:center;gap:6px;padding:9px 16px;font-size:13px;color:#0073ea;cursor:pointer;border-bottom:1px solid #e0e3e9;background:#fff;}
+.add-row:hover{background:#e8f0fe;}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:999;}
+.modal{background:#fff;border-radius:12px;padding:24px;width:440px;box-shadow:0 8px 40px rgba(0,0,0,.15);}
+.modal h2{font-size:16px;font-weight:700;margin-bottom:16px;}
+.modal-field{margin-bottom:14px;}
+.modal-field label{font-size:13px;font-weight:500;color:#676879;display:block;margin-bottom:5px;}
+.modal-field input,.modal-field select{width:100%;font-size:14px;padding:8px 12px;border-radius:6px;border:1px solid #c5c7d4;background:#f4f5f7;font-family:'Figtree',sans-serif;}
+.modal-field input:focus,.modal-field select:focus{outline:none;border-color:#0073ea;background:#fff;}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;}
+.week-list{max-height:220px;overflow-y:auto;border:1px solid #e0e3e9;border-radius:8px;margin-bottom:14px;}
+.week-list-item{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid #e0e3e9;cursor:pointer;font-size:13px;}
+.week-list-item:last-child{border-bottom:none;}
+.week-list-item:hover{background:#f0f4ff;}
+.week-list-item.active{background:#e8f0fe;font-weight:600;color:#0073ea;}
+.week-list-item .wdel{color:#e44258;font-size:12px;cursor:pointer;padding:2px 6px;border-radius:4px;}
+.week-list-item .wdel:hover{background:#ffebee;}
+.summary-strip{display:flex;gap:0;background:#fff;border-bottom:1px solid #e0e3e9;}
+.scard{flex:1;padding:12px 20px;border-right:1px solid #e0e3e9;}
+.scard:last-child{border-right:none;}
+.scard-label{font-size:11px;font-weight:500;color:#676879;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;}
+.scard-val{font-size:22px;font-weight:700;color:#1d2026;}
+.scard-val.green{color:#00854d;}.scard-val.blue{color:#0073ea;}.scard-val.amber{color:#d4831a;}.scard-val.red{color:#e44258;}
+.nav-tabs{display:flex;align-items:center;gap:0;background:#fff;border-bottom:2px solid #e0e3e9;padding:0 20px;flex-shrink:0;}
+.nav-tab{display:inline-flex;align-items:center;gap:6px;padding:0 18px;height:42px;font-size:13px;font-weight:500;color:#676879;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:color .1s;}
+.nav-tab:hover{color:#0073ea;}
+.nav-tab.active{color:#0073ea;border-bottom-color:#0073ea;font-weight:600;}
+.tracker-wrap{display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0;}
+.hv-wrap{display:none;flex-direction:column;flex:1;overflow:hidden;min-height:0;}
+.hv-wrap.show{display:flex;}
+.hidden{display:none!important;}
+.hv-toolbar{display:flex;align-items:center;gap:8px;padding:10px 20px;background:#fff;border-bottom:1px solid #e0e3e9;flex-wrap:wrap;flex-shrink:0;}
+.hv-srch{padding:6px 10px;border-radius:6px;border:1px solid #e0e3e9;font-size:13px;width:190px;background:#f4f5f7;}
+.hv-srch:focus{outline:none;border-color:#0073ea;background:#fff;}
+.hv-info{font-size:12px;color:#676879;margin-left:auto;}
+.week-picker{background:#fff;border-bottom:1px solid #e0e3e9;padding:10px 20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex-shrink:0;}
+.wp-label{font-size:12px;font-weight:600;color:#676879;white-space:nowrap;}
+.wp-weeks{display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1;}
+.wp-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:6px;font-size:12px;font-weight:500;border:1px solid #e0e3e9;background:#f4f5f7;color:#676879;cursor:pointer;transition:all .12s;}
+.wp-chip:hover{border-color:#0073ea;color:#0073ea;background:#e8f0fe;}
+.wp-chip.sel{background:#0073ea;border-color:#0073ea;color:#fff;}
+.wp-actions{display:flex;gap:6px;flex-shrink:0;}
+.wp-btn{font-size:12px;padding:4px 10px;border-radius:5px;border:1px solid #e0e3e9;background:#f4f5f7;color:#676879;cursor:pointer;}
+.wp-btn:hover{background:#e8f0fe;border-color:#0073ea;color:#0073ea;}
+.hv-grid-wrap{overflow:auto;flex:1;}
+.hv-table{border-collapse:collapse;width:100%;min-width:900px;}
+.hv-table th,.hv-table td{border:1px solid #e0e3e9;text-align:left;vertical-align:top;}
+.hv-th-info{font-size:11px;font-weight:700;color:#676879;text-transform:uppercase;letter-spacing:.03em;padding:8px 12px;background:#f4f5f7;white-space:nowrap;position:sticky;top:0;z-index:20;}
+.hv-th-week{font-size:12px;font-weight:700;color:#fff;padding:8px 12px;text-align:center;position:sticky;top:0;z-index:20;white-space:nowrap;}
+.hv-group-row td{background:#f0f2f5;border-top:2px solid #c5c7d4;padding:7px 14px;font-size:13px;font-weight:700;color:#1d2026;}
+.hv-td-acct{padding:8px 12px;background:#fff;min-width:200px;max-width:240px;position:sticky;left:0;z-index:10;border-right:2px solid #c5c7d4!important;}
+.hv-td-acct-name{font-size:12px;font-weight:500;color:#1d2026;line-height:1.4;}
+.hv-td-week{padding:7px 10px;min-width:200px;max-width:260px;background:#fff;vertical-align:top;}
+.hv-td-week.active-col{background:#fafcff;}
+.hv-td-week.no-data{background:#fafafa;}
+.hv-no-entry{font-size:11px;color:#c5c7d4;font-style:italic;}
+.hv-upd-txt{font-size:12px;color:#1d2026;line-height:1.5;margin-bottom:4px;white-space:pre-wrap;}
+.hv-sku-row{display:flex;align-items:center;gap:4px;margin-bottom:3px;}
+.hv-sku-val{font-size:11px;color:#0060c0;font-weight:500;}
+.hv-prog-pill{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:2px 7px;border-radius:99px;}
+.pp-done{background:#e8f5e9;color:#1b5e20;}.pp-doing{background:#e8f0fe;color:#0060c0;}
+.pp-wait{background:#fff8e1;color:#e65100;}.pp-fail{background:#ffebee;color:#c62828;}.pp-none{background:#f0f2f5;color:#676879;}
+.tag-sm{display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:3px;font-size:10px;font-weight:600;}
+
+/* ══ GMV MONITOR ══ */
+.gmv-wrap{display:none;flex-direction:column;flex:1;overflow:hidden;min-height:0;}
+.gmv-wrap.show{display:flex;}
+.gmv-scroll{overflow-y:auto;flex:1;padding:20px;background:#f4f5f7;}
+.gmv-toolbar{display:flex;align-items:center;gap:10px;padding:10px 20px;background:#fff;border-bottom:1px solid #e0e3e9;flex-shrink:0;flex-wrap:wrap;}
+.gmv-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:14px;margin-bottom:20px;}
+.gmv-card{background:#fff;border-radius:10px;padding:16px;border:1px solid #e0e3e9;position:relative;overflow:hidden;}
+.gmv-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.gmv-card.card-total::before{background:#0073ea;}
+.gmv-card.card-runrate::before{background:#00854d;}
+.gmv-card.card-mom-up::before{background:#00854d;}
+.gmv-card.card-mom-down::before{background:#e44258;}
+.gmv-card.card-alert::before{background:#f59e0b;}
+.gmv-card-label{font-size:11px;font-weight:600;color:#676879;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;}
+.gmv-card-val{font-size:20px;font-weight:700;color:#1d2026;line-height:1.2;}
+.gmv-card-sub{font-size:12px;color:#676879;margin-top:4px;}
+.gmv-card-val.up{color:#00854d;}
+.gmv-card-val.down{color:#e44258;}
+.gmv-card-val.warn{color:#d4831a;}
+.gmv-section{background:#fff;border-radius:10px;border:1px solid #e0e3e9;margin-bottom:20px;overflow:hidden;}
+.gmv-section-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #e0e3e9;}
+.gmv-section-title{font-size:14px;font-weight:700;color:#1d2026;}
+.gmv-section-body{padding:16px 18px;}
+.chart-container{position:relative;height:300px;}
+.gmv-table{width:100%;border-collapse:collapse;font-size:13px;}
+.gmv-table th{font-size:11px;font-weight:700;color:#676879;text-transform:uppercase;letter-spacing:.03em;padding:8px 12px;background:#f4f5f7;border-bottom:2px solid #e0e3e9;white-space:nowrap;text-align:right;}
+.gmv-table th:first-child,.gmv-table th:nth-child(2){text-align:left;}
+.gmv-table td{padding:9px 12px;border-bottom:1px solid #e0e3e9;vertical-align:middle;text-align:right;}
+.gmv-table td:first-child,.gmv-table td:nth-child(2){text-align:left;}
+.gmv-table tbody tr:hover{background:#f6f7fb;}
+.mom-up{color:#00854d;font-weight:600;}
+.mom-down{color:#e44258;font-weight:600;}
+.mom-neutral{color:#676879;}
+.alert-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#e44258;margin-right:5px;}
+.action-badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;padding:2px 7px;border-radius:99px;background:#e8f0fe;color:#0060c0;font-weight:500;}
+.no-action-badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;padding:2px 7px;border-radius:99px;background:#ffebee;color:#c62828;font-weight:500;}
+.gmv-staff-chips{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+
+/* ══ ACTION ITEMS ══ */
+.ai-wrap{margin-top:4px;display:flex;flex-direction:column;gap:2px;}
+.ai-row{display:flex;align-items:center;gap:4px;padding:1px 0;}
+.ai-type{display:inline-flex;align-items:center;height:16px;padding:0 5px;border-radius:3px;font-size:10px;font-weight:600;white-space:nowrap;flex-shrink:0;}
+.ai-type-sell{background:#e8f5e9;color:#1b5e20;}
+.ai-type-case{background:#e3f2fd;color:#0d47a1;}
+.ai-type-newshop{background:#f3e5f5;color:#6a1b9a;}
+.ai-type-debt{background:#ffebee;color:#c62828;}
+.ai-type-other{background:#f5f5f5;color:#616161;}
+.ai-name-sm{font-size:11px;color:#1d2026;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ai-st{font-size:10px;font-weight:500;padding:1px 5px;border-radius:3px;white-space:nowrap;flex-shrink:0;}
+.ai-st-doing{background:#e8f0fe;color:#0060c0;}
+.ai-st-wait{background:#fff8e1;color:#e65100;}
+.ai-st-done{background:#e8f5e9;color:#1b5e20;}
+.ai-st-cancel{background:#f5f5f5;color:#9e9e9e;}
+.ai-manage-btn{font-size:11px;color:#0073ea;cursor:pointer;padding:1px 0;display:inline-flex;align-items:center;gap:2px;background:none;border:none;font-family:'Figtree',sans-serif;margin-top:3px;}
+.ai-manage-btn:hover{text-decoration:underline;}
+/* ══ OPTY FLAG ══ */
+.opty-flag{display:inline-flex;align-items:center;gap:2px;font-size:10px;font-weight:600;padding:1px 5px;border-radius:3px;background:#fff3e0;color:#e65100;cursor:pointer;margin-left:5px;border:1px solid #ffe0b2;vertical-align:middle;line-height:1;}
+.opty-flag:hover{background:#ffe0b2;}
+.opty-flag-empty{background:#f5f5f5;color:#bbb;border-color:#e0e3e9;opacity:.6;}
+.opty-flag-empty:hover{opacity:1;background:#fff3e0;color:#e65100;border-color:#ffe0b2;}
+/* ══ MODALS (AI + OPTY) ══ */
+.fk-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:9999;}
+.fk-modal-box{background:#fff;border-radius:12px;padding:24px;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 12px 48px rgba(0,0,0,.2);}
+.fk-modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.fk-modal-title{font-size:15px;font-weight:700;color:#1d2026;}
+.fk-modal-close{background:#f4f5f7;border:none;border-radius:6px;width:32px;height:32px;font-size:18px;cursor:pointer;color:#676879;display:flex;align-items:center;justify-content:center;}
+.fk-modal-close:hover{background:#e0e3e9;}
+.fk-item-card{display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:1px solid #e0e3e9;border-radius:8px;background:#f9fafb;margin-bottom:6px;}
+.fk-item-info{flex:1;min-width:0;}
+.fk-del-btn{width:28px;height:28px;border-radius:6px;border:1px solid #fce4e8;background:#fff;color:#e44258;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0;}
+.fk-del-btn:hover{background:#ffebee;}
+.fk-add-form{background:#f4f5f7;border-radius:8px;padding:14px;border:1px solid #e0e3e9;margin-top:4px;}
+.fk-add-form label{font-size:11px;color:#676879;display:block;margin-bottom:3px;}
+.fk-add-form input,.fk-add-form select,.fk-add-form textarea{width:100%;font-size:13px;padding:7px 10px;border-radius:6px;border:1px solid #c5c7d4;font-family:'Figtree',sans-serif;background:#fff;}
+.fk-add-form input:focus,.fk-add-form select:focus,.fk-add-form textarea:focus{outline:none;border-color:#0073ea;}
+.fk-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
+.fk-form-row{margin-bottom:8px;}
+.opty-card-meta{font-size:11px;color:#676879;display:flex;gap:10px;flex-wrap:wrap;margin-top:4px;}
+.opty-st-open{color:#e65100;font-weight:600;}
+.opty-st-closed{color:#00854d;font-weight:600;}
+
+</style>
+</head>
+<body style="display:flex;flex-direction:column;height:100vh;overflow:hidden;">
+
+<div class="topbar">
+  <div class="logo"><div class="logo-icon">🌿</div>freshket</div>
+  <div class="topbar-sep"></div>
+  <span class="board-name">KAM Account Tracker — Q2 2026</span>
+  <div class="topbar-right">
+    <span id="sync-badge" style="font-size:12px;font-weight:500;min-width:80px;text-align:right;"></span>
+    <button class="btn btn-ghost" onclick="exportCSV()">⬇️ Export</button>
+    <button class="btn btn-primary" onclick="openWeekModal()">📅 จัดการสัปดาห์</button>
+  </div>
+</div>
+
+<div class="nav-tabs">
+  <div class="nav-tab active" id="tab-tracker" onclick="switchTab('tracker')">📋 Tracker</div>
+  <div class="nav-tab" id="tab-history" onclick="switchTab('history')">🕐 ประวัติรายสัปดาห์</div>
+  <div class="nav-tab" id="tab-gmv" onclick="switchTab('gmv')">📊 GMV Monitor</div>
+</div>
+
+<div class="tracker-wrap" id="tracker-wrap">
+<div class="week-banner">
+  <span class="week-label">📅 สัปดาห์ที่แสดง:</span>
+  <div class="week-select-wrap">
+    <select class="week-select" id="active-week-sel" onchange="switchWeek(this.value)">
+      <option value="">— เลือกสัปดาห์ —</option>
+    </select>
+  </div>
+  <span class="week-badge" id="week-badge">Q2 2026</span>
+  <button class="week-action" onclick="openWeekModal()">+ สร้างสัปดาห์ใหม่</button>
+  <div class="week-stats">
+    <span class="wstat wstat-green">Uplift <span id="ws-uplift">—</span></span>
+    <span class="wstat wstat-blue">Maintain <span id="ws-maintain">—</span></span>
+    <span class="wstat wstat-amber">Winback <span id="ws-winback">—</span></span>
+    <span class="wstat wstat-red">Skip/Debt <span id="ws-skip">—</span></span>
+    <span class="wstat">อัพเดทแล้ว <span id="ws-updated">0</span> accounts</span>
+  </div>
+</div>
+<div class="summary-strip">
+  <div class="scard"><div class="scard-label">บัญชีทั้งหมด</div><div class="scard-val" id="ss-total">—</div></div>
+  <div class="scard"><div class="scard-label">Uplift</div><div class="scard-val green" id="ss-uplift">—</div></div>
+  <div class="scard"><div class="scard-label">Maintain</div><div class="scard-val blue" id="ss-maintain">—</div></div>
+  <div class="scard"><div class="scard-label">Winback</div><div class="scard-val amber" id="ss-winback">—</div></div>
+  <div class="scard"><div class="scard-label">Skip / Debt</div><div class="scard-val red" id="ss-skip">—</div></div>
+</div>
+<div class="toolbar" style="border-bottom:none;padding-bottom:0;">
+  <span style="font-size:12px;color:#676879;font-weight:600;white-space:nowrap;">👤 น้อง:</span>
+  <span class="chip on" id="fc-all" onclick="setStaff('all')">ทั้งหมด</span>
+  <span class="chip" id="fc-Dent" onclick="setStaff('Dent')">Dent</span>
+  <span class="chip" id="fc-BB" onclick="setStaff('BB')">BB</span>
+  <span class="chip" id="fc-Ning" onclick="setStaff('Ning')">Ning</span>
+  <span class="chip" id="fc-Tos" onclick="setStaff('Tos')">Tos</span>
+  <span class="chip" id="fc-Kwang" onclick="setStaff('Kwang')">Kwang</span>
+  <span class="chip" id="fc-Mild" onclick="setStaff('Mild')">Mild</span>
+  <span class="chip" id="fc-Nitcha" onclick="setStaff('Nitcha')">Nitcha</span>
+</div>
+<div class="toolbar">
+  <div class="search-wrap">
+    <input class="search-input" id="srch" placeholder="ค้นหา account..." oninput="render()" />
+  </div>
+  <div class="toolbar-sep"></div>
+  <select class="filter-sel" id="sel-status" onchange="render()">
+    <option value="">Status: ทั้งหมด</option>
+    <option>Uplift</option><option>Maintain</option><option>Winback</option>
+    <option>Unknown</option><option>Skip</option><option>Debt</option>
+  </select>
+  <select class="filter-sel" id="sel-pri" onchange="render()">
+    <option value="">Priority: ทั้งหมด</option>
+    <option>P1</option><option>P2</option><option>P3</option>
+  </select>
+  <select class="filter-sel" id="sel-opp" onchange="render()">
+    <option value="">Opportunity: ทั้งหมด</option>
+    <option>High</option><option>Medium</option><option>Low</option>
+  </select>
+  <select class="filter-sel" id="sel-mom" onchange="render()">
+    <option value="">MoM%: ทั้งหมด</option>
+    <option value="increase">▲ เพิ่มขึ้น</option>
+    <option value="decrease">▼ ลดลง</option>
+    <option value="nodata">— ไม่มีข้อมูล</option>
+  </select>
+  <select class="filter-sel" id="sel-prog" onchange="render()">
+    <option value="">Progress: ทั้งหมด</option>
+    <option>ยังไม่เริ่ม</option><option>กำลังดำเนินการ</option>
+    <option>รอผล</option><option>ได้แล้ว</option><option>ไม่ได้</option>
+  </select>
+  <div class="toolbar-right">
+    <span class="item-count" id="rc">— items</span>
+    <button class="btn btn-ghost" id="edit-mode-btn" onclick="toggleEditMode()">
+      ✏️ <span id="edit-mode-label">แก้ไขข้อมูล</span>
+    </button>
+    <select class="per-page-sel" id="per-page" onchange="perPage=parseInt(this.value);page=1;render()">
+      <option value="20">20 / หน้า</option><option value="50">50 / หน้า</option>
+      <option value="100">100 / หน้า</option><option value="999" selected>ทั้งหมด</option>
+    </select>
+  </div>
+</div>
+<div class="grid-wrap" id="grid-wrap">
+<div class="grid">
+  <div class="col-heads">
+    <div class="ch ch-chk-freeze"></div>
+    <div class="ch ch-acct-freeze sort" onclick="sortBy('account')">Account <span style="font-size:10px;opacity:.5;margin-left:3px;">↕</span></div>
+    <div class="ch w-status sort" onclick="sortBy('status')">Status <span style="font-size:10px;opacity:.5;margin-left:3px;">↕</span></div>
+    <div class="ch w-opp sort" onclick="sortBy('opp')">Opportunity <span style="font-size:10px;opacity:.5;margin-left:3px;">↕</span></div>
+    <div class="ch w-pri">Priority</div>
+    <div class="ch w-diff">Difficulty</div>
+    <div class="ch w-note">KA Insight</div>
+    <div class="ch w-prog">Progress / Actions</div>
+    <div class="ch" id="ch-upd" style="width:var(--w-upd);">Weekly Update<span class="rhandle" data-col="upd" onclick="event.stopPropagation()"></span></div>
+    <div class="ch sort" id="ch-mom" style="width:var(--w-mom);" onclick="sortBy('mom')">MoM% <span style="font-size:10px;opacity:.5;margin-left:3px;">↕</span><span class="rhandle" data-col="mom" onclick="event.stopPropagation()"></span></div>
+  </div>
+  <div id="grid-body"></div>
+</div>
+</div>
+<div class="footer">
+  <span id="footer-stat">—</span>
+  <div class="footer-right">
+    <button class="page-btn" id="pp" onclick="pg(-1)">‹</button>
+    <span id="pi" style="font-size:12px;">—</span>
+    <button class="page-btn" id="np" onclick="pg(1)">›</button>
+  </div>
+</div>
+</div>
+
+<div class="hv-wrap" id="hv-wrap">
+  <div class="hv-toolbar">
+    <div class="search-wrap">
+      <input class="hv-srch" id="hv-srch" placeholder="ค้นหา account / น้อง..." oninput="renderHistory()" />
+    </div>
+    <div class="toolbar-sep"></div>
+    <span style="font-size:12px;font-weight:500;color:#676879;">น้อง:</span>
+    <span class="chip on" id="hfc-all" onclick="hvSetStaff('all')">ทั้งหมด</span>
+    <span class="chip" id="hfc-Dent" onclick="hvSetStaff('Dent')">Dent</span>
+    <span class="chip" id="hfc-BB" onclick="hvSetStaff('BB')">BB</span>
+    <span class="chip" id="hfc-Ning" onclick="hvSetStaff('Ning')">Ning</span>
+    <span class="chip" id="hfc-Tos" onclick="hvSetStaff('Tos')">Tos</span>
+    <span class="chip" id="hfc-Kwang" onclick="hvSetStaff('Kwang')">Kwang</span>
+    <span class="chip" id="hfc-Mild" onclick="hvSetStaff('Mild')">Mild</span>
+    <span class="chip" id="hfc-Nitcha" onclick="hvSetStaff('Nitcha')">Nitcha</span>
+    <div class="toolbar-sep"></div>
+    <select class="filter-sel" id="hv-filter" onchange="renderHistory()">
+      <option value="all">แสดง: ทุก account</option>
+      <option value="has_update">มีอัพเดทอย่างน้อย 1 วีค</option>
+      <option value="no_update">ยังไม่มีอัพเดทเลย</option>
+    </select>
+    <select class="filter-sel" id="hv-prog-filter" onchange="renderHistory()">
+      <option value="">Progress: ทั้งหมด</option>
+      <option value="ยังไม่เริ่ม">ยังไม่เริ่ม</option>
+      <option value="กำลังดำเนินการ">กำลังดำเนินการ</option>
+      <option value="รอผล">รอผล</option>
+      <option value="ได้แล้ว">ได้แล้ว</option>
+      <option value="ไม่ได้">ไม่ได้</option>
+    </select>
+    <span class="hv-info" id="hv-count">— accounts</span>
+  </div>
+  <div class="week-picker">
+    <span class="wp-label">🗓️ เลือกสัปดาห์ที่จะแสดง:</span>
+    <div class="wp-weeks" id="wp-weeks"></div>
+    <div class="wp-actions">
+      <button class="wp-btn" onclick="hvSelectAll()">เลือกทั้งหมด</button>
+      <button class="wp-btn" onclick="hvClearAll()">ล้างทั้งหมด</button>
+    </div>
+  </div>
+  <div class="hv-grid-wrap">
+    <table class="hv-table" id="hv-table">
+      <thead id="hv-thead"></thead>
+      <tbody id="hv-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+
+<!-- ══ GMV MONITOR ══ -->
+<div class="gmv-wrap" id="gmv-wrap">
+  <div class="gmv-toolbar">
+    <span style="font-size:13px;font-weight:600;color:#676879;white-space:nowrap;">👤 น้อง:</span>
+    <div class="gmv-staff-chips">
+      <span class="chip on" id="gfc-all" onclick="gmvSetStaff('all')">ทั้งหมด</span>
+      <span class="chip" id="gfc-Dent" onclick="gmvSetStaff('Dent')">Dent</span>
+      <span class="chip" id="gfc-BB" onclick="gmvSetStaff('BB')">BB</span>
+      <span class="chip" id="gfc-Ning" onclick="gmvSetStaff('Ning')">Ning</span>
+      <span class="chip" id="gfc-Tos" onclick="gmvSetStaff('Tos')">Tos</span>
+      <span class="chip" id="gfc-Kwang" onclick="gmvSetStaff('Kwang')">Kwang</span>
+      <span class="chip" id="gfc-Mild" onclick="gmvSetStaff('Mild')">Mild</span>
+      <span class="chip" id="gfc-Nitcha" onclick="gmvSetStaff('Nitcha')">Nitcha</span>
+    </div>
+    <div class="topbar-sep"></div>
+    <select class="filter-sel" id="gmv-sort" onchange="renderGMV()">
+      <option value="mom_desc">เรียงตาม MoM% ↓ (ลดสุด)</option>
+      <option value="mom_asc">เรียงตาม MoM% ↑ (เพิ่มสุด)</option>
+      <option value="gmv_desc">เรียงตาม GMV Apr ↓</option>
+      <option value="runrate_desc">เรียงตาม Runrate ↓</option>
+    </select>
+    <select class="filter-sel" id="gmv-alert-filter" onchange="renderGMV()">
+      <option value="all">แสดงทุก account</option>
+      <option value="declining">เฉพาะร้านที่ยอดลด (MoM-)</option>
+      <option value="no_action">ยอดลด + ยังไม่มี action</option>
+    </select>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+      <span id="gmv-data-source" style="font-size:11px;color:#00854d;font-weight:500;"></span>
+      <label class="btn btn-ghost" style="cursor:pointer;font-size:12px;" for="gmv-xlsx-input">📂 Upload Excel</label>
+      <input type="file" id="gmv-xlsx-input" accept=".xlsx,.xls" style="display:none;" onchange="handleGMVUpload(this)" />
+    </div>
+  </div>
+
+  <div class="gmv-scroll">
+    <div class="gmv-cards" id="gmv-cards"></div>
+
+    <div class="gmv-section">
+      <div class="gmv-section-header">
+        <span class="gmv-section-title">📊 GMV รายเดือน แยกตาม Staff (Jan–May 2026)</span>
+        <select class="filter-sel" id="gmv-chart-mode" onchange="renderGMVChart()" style="font-size:12px;">
+          <option value="stacked">Stacked by Staff</option>
+          <option value="grouped">Grouped by Staff</option>
+          <option value="total">Team Total</option>
+        </select>
+      </div>
+      <div class="gmv-section-body">
+        <div class="chart-container"><canvas id="gmv-bar-chart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="gmv-section">
+      <div class="gmv-section-header">
+        <span class="gmv-section-title">📋 ยอดขายรายบัญชี — <span id="gmv-table-count" style="color:#676879;font-weight:400;font-size:13px;"></span></span>
+        <input type="text" id="gmv-search" placeholder="ค้นหา account..." oninput="renderGMVTable()"
+          style="font-size:13px;padding:5px 10px;border-radius:6px;border:1px solid #e0e3e9;background:#f4f5f7;width:200px;" />
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="gmv-table">
+          <thead><tr>
+            <th style="width:28px;text-align:center;">#</th>
+            <th style="min-width:220px;">Account</th>
+            <th>Staff</th>
+            <th>ม.ค.</th><th>ก.พ.</th><th>มี.ค.</th><th>เม.ย.</th>
+            <th>พ.ค. MTD</th>
+            <th>Runrate</th>
+            <th>MoM%<br/><span style="font-size:9px;font-weight:400;">(เม.ย.→RR)</span></th>
+            <th style="min-width:130px;text-align:left;">Weekly Action</th>
+          </tr></thead>
+          <tbody id="gmv-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal-bg" id="week-modal" style="display:none;" onclick="closeWeekModalBg(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2>📅 จัดการสัปดาห์</h2>
+    <div class="modal-field">
+      <label>สร้างสัปดาห์ใหม่</label>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="new-week-name" placeholder="เช่น Week 19 (5-11 พ.ค. 2026)" style="flex:1;" />
+        <button class="btn btn-primary" onclick="addWeek()" style="white-space:nowrap;">+ เพิ่ม</button>
+      </div>
+    </div>
+    <div class="modal-field">
+      <label>สัปดาห์ที่มีอยู่ (คลิกเพื่อสลับ)</label>
+      <div class="week-list" id="week-list-ui"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeWeekModal()">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const GMV_EMBEDDED = [{"staff": "BB", "account_name": "เครือ Hospitality Management Asia (HMA)", "Jan": 2437404.0, "Feb": 2097386.0, "Mar": 2006220.0, "Apr": 1885418.0, "May": 1479905.0, "runrate": 1911544.0}, {"staff": "BB", "account_name": "เครือ บริษัท เท เอกมัย จำกัด", "Jan": 740975.0, "Feb": 751900.0, "Mar": 813607.0, "Apr": 1064986.0, "May": 688868.0, "runrate": 889788.0}, {"staff": "BB", "account_name": "บริษัท ปตท. น้ำมันและการค้าปลีก จำกัด (มหาชน) สำนักงานใหญ่ (Upcountry)", "Jan": 536625.0, "Feb": 537505.0, "Mar": 804670.0, "Apr": 1275285.0, "May": 1165740.0, "runrate": 1505748.0}, {"staff": "BB", "account_name": "เครือ LK Group", "Jan": 645775.0, "Feb": 519363.0, "Mar": 511981.0, "Apr": 393861.0, "May": 363170.0, "runrate": 469095.0}, {"staff": "BB", "account_name": "เครือ บริษัท มั่งมี โภชนา จำกัด", "Jan": 457454.0, "Feb": 538480.0, "Mar": 396828.0, "Apr": 469154.0, "May": 373281.0, "runrate": 482155.0}, {"staff": "BB", "account_name": "บริษัท อูมามิ เรสเตอรองต์ จำกัด", "Jan": 0.0, "Feb": 275009.0, "Mar": 526616.0, "Apr": 788025.0, "May": 579599.0, "runrate": 748648.0}, {"staff": "BB", "account_name": "Nam Nam Pasta & Tapas", "Jan": 276813.0, "Feb": 290474.0, "Mar": 335808.0, "Apr": 341442.0, "May": 251277.0, "runrate": 324567.0}, {"staff": "BB", "account_name": "บริษัท ข้าว โซ อิ กรุ๊ป จำกัด & บริษัท ร็อคส์ พีซี จำกัด & บริษัท เมอรากิ ร็อคส์ จำกัด", "Jan": 370929.0, "Feb": 379048.0, "Mar": 381549.0, "Apr": 414862.0, "May": 330179.0, "runrate": 426481.0}, {"staff": "BB", "account_name": "บริษัท ปตท. น้ำมันและการค้าปลีก จำกัด (มหาชน) สำนักงานใหญ่ (BKK) & บริษัท ปตท.สำรวจและผลิตปิโตรเลียม จำกัด (มหาชน) สำนักงานใหญ่", "Jan": 250445.0, "Feb": 237160.0, "Mar": 379170.0, "Apr": 629991.0, "May": 518416.0, "runrate": 669620.0}, {"staff": "BB", "account_name": "บริษัท อมารี พัทยา จำกัด & บริษัท โอโซ่ พัทยา จำกัด", "Jan": 290948.0, "Feb": 276523.0, "Mar": 358176.0, "Apr": 279310.0, "May": 191454.0, "runrate": 247294.0}, {"staff": "BB", "account_name": "บริษัท ที ดับบลิว เอส ที จำกัด & บริษัท โคเบอนา จำกัด & บริษัท มีทติ้งอัพ จำกัด", "Jan": 344745.0, "Feb": 273010.0, "Mar": 310916.0, "Apr": 321071.0, "May": 212342.0, "runrate": 274275.0}, {"staff": "BB", "account_name": "At Mind Group", "Jan": 227103.0, "Feb": 247059.0, "Mar": 275131.0, "Apr": 257563.0, "May": 166040.0, "runrate": 214469.0}, {"staff": "BB", "account_name": "ดี.ดี.เอ็ม. โฮเทล จำกัด", "Jan": 224717.0, "Feb": 271230.0, "Mar": 212682.0, "Apr": 193824.0, "May": 166309.0, "runrate": 214816.0}, {"staff": "BB", "account_name": "บริษัท บางกอกเบียร์แอนด์เบเวอร์เรจ จำกัด & บริษัท เอพีบีเอ เทรนนิ่ง เซ็นเตอร์ จำกัด", "Jan": 235501.0, "Feb": 231744.0, "Mar": 251977.0, "Apr": 227916.0, "May": 105386.0, "runrate": 136124.0}, {"staff": "BB", "account_name": "บริษัท เอ็มเบอร์ ตานี จำกัด (สำนักงานใหญ่)", "Jan": 264436.0, "Feb": 284754.0, "Mar": 226273.0, "Apr": 216518.0, "May": 113822.0, "runrate": 147020.0}, {"staff": "BB", "account_name": "บริษัท บีเอซี กูร์เมท์ เฮ้าส์ จำกัด", "Jan": 349553.0, "Feb": 234299.0, "Mar": 223649.0, "Apr": 279064.0, "May": 249428.0, "runrate": 322178.0}, {"staff": "BB", "account_name": "บริษัท สมาร์ท ยูไนเต็ด (ประเทศไทย) จำกัด & บริษัท เชค แช็ค (ประเทศไทย) จำกัด", "Jan": 209149.0, "Feb": 131294.0, "Mar": 199629.0, "Apr": 155014.0, "May": 168151.0, "runrate": 217195.0}, {"staff": "BB", "account_name": "บริษัท โบ.ลานและสโลนส์ อาหารฝรั่ง จำกัด (Parent)", "Jan": 300189.0, "Feb": 188765.0, "Mar": 222157.0, "Apr": 201681.0, "May": 118090.0, "runrate": 152533.0}, {"staff": "BB", "account_name": "บริษัท ร่วมอิสสระ ดีเวล็อปเมนท์ จำกัด & บริษัท ศรีพันวา แมเนจเมนท์ จำกัด", "Jan": 268582.0, "Feb": 171684.0, "Mar": 187475.0, "Apr": 151122.0, "May": 118499.0, "runrate": 153061.0}, {"staff": "BB", "account_name": "เครือ กินกันจัง", "Jan": 220128.0, "Feb": 154072.0, "Mar": 192545.0, "Apr": 199792.0, "May": 144180.0, "runrate": 186233.0}, {"staff": "BB", "account_name": "บริษัท โซยู ฟู้ด จำกัด & บริษัท สยามเบเวอร์ลี่ จํากัด", "Jan": 137755.0, "Feb": 218050.0, "Mar": 193122.0, "Apr": 192686.0, "May": 121954.0, "runrate": 157524.0}, {"staff": "BB", "account_name": "บริษัท พีเบอร์รี่ ไทย จำกัด", "Jan": 173105.0, "Feb": 147464.0, "Mar": 141134.0, "Apr": 254562.0, "May": 66840.0, "runrate": 86336.0}, {"staff": "BB", "account_name": "บริษัท นอสแทลจิค เอฟแอนด์บี จำกัด", "Jan": 136666.0, "Feb": 123324.0, "Mar": 135535.0, "Apr": 100151.0, "May": 104939.0, "runrate": 135546.0}, {"staff": "BB", "account_name": "บริษัท พาข้าวก๋อ จำกัด", "Jan": 87452.0, "Feb": 91600.0, "Mar": 92023.0, "Apr": 56890.0, "May": 31801.0, "runrate": 41076.0}, {"staff": "BB", "account_name": "บริษัท อินเดียเกท ฮอสพิเทลลิตี้ จำกัด", "Jan": 0.0, "Feb": 6000.0, "Mar": 0.0, "Apr": 0.0, "May": 0.0, "runrate": 0.0}, {"staff": "BB", "account_name": "บริษัท คิงส์ตัน โฮลดิ้งส์ จำกัด", "Jan": 163710.0, "Feb": 115498.0, "Mar": 150147.0, "Apr": 116536.0, "May": 97028.0, "runrate": 125327.0}, {"staff": "BB", "account_name": "บริษัท นายูกิ โฮลดิ้ง (ประเทศไทย) จำกัด", "Jan": 0.0, "Feb": 0.0, "Mar": 0.0, "Apr": 0.0, "May": 36983.0, "runrate": 47769.0}, {"staff": "BB", "account_name": "บริษัท เอเวอร์กรีน ฮอสพิทัลลิตี้ จำกัด", "Jan": 0.0, "Feb": 0.0, "Mar": 96944.0, "Apr": 81718.0, "May": 67988.0, "runrate": 87818.0}, {"staff": "BB", "account_name": "บริษัท แกดอะเบาท์ ฮอสพิทาลิตี้ จำกัด (สำนักงานใหญ่)", "Jan": 0.0, "Feb": 0.0, "Mar": 0.0, "Apr": 0.0, "May": 0.0, "runrate": 0.0}, {"staff": "BB", "account_name": "บริษัท สยาม ออยล์ คอฟฟี่ จำกัด & บริษัท สยาม ออยล์ โปรดักส์ จำกัด & บริษัท ยานัท จำกัด (Special Project Cafe Amazon DODO)", "Jan": 2780.0, "Feb": 2481.0, "Mar": 1112.0, "Apr": 1102.0, "May": 848.0, "runrate": 1096.0}, {"staff": "BB", "account_name": "บริษัท สยาม ออยล์ คอฟฟี่ จำกัด", "Jan": 1170.0, "Feb": 1120.0, "Mar": 0.0, "Apr": 900.0, "May": 0.0, "runrate": 0.0}, {"staff": "Dent", "account_name": "บริษัท ชาบู บารู จำกัด", "Jan": 2423464.0, "Feb": 2081378.0, "Mar": 1945346.0, "Apr": 1798814.0, "May": 1416362.0, "runrate": 1829467.0}, {"staff": "Dent", "account_name": "เครือ บริษัท สล็อธ ชาบู จำกัด", "Jan": 1209625.0, "Feb": 1064636.0, "Mar": 1130214.0, "Apr": 1091853.0, "May": 876567.0, "runrate": 1132233.0}, {"staff": "Dent", "account_name": "บริษัท รวยปังปัง จำกัด & บริษัท รวยสบายสบาย จำกัด & บริษัท รวยไม่หยุด จำกัด", "Jan": 445427.0, "Feb": 545078.0, "Mar": 495101.0, "Apr": 663982.0, "May": 417500.0, "runrate": 539271.0}, {"staff": "Dent", "account_name": "เครือ บริษัท ซีเอ็มซี เดอะ สตรีท จำกัด", "Jan": 596466.0, "Feb": 602111.0, "Mar": 658903.0, "Apr": 572416.0, "May": 519133.0, "runrate": 670546.0}, {"staff": "Dent", "account_name": "สเต็กกินกับอาหารคลีน - คุณศรัณย์ พิพัฒน์ศรีสวัสดิ์ (Parent)", "Jan": 431662.0, "Feb": 374476.0, "Mar": 563989.0, "Apr": 669064.0, "May": 577368.0, "runrate": 745767.0}, {"staff": "Dent", "account_name": "เครือ บริษัท ริชเทสท์ฮับ จำกัด", "Jan": 343033.0, "Feb": 312938.0, "Mar": 298122.0, "Apr": 283291.0, "May": 199385.0, "runrate": 257539.0}, {"staff": "Dent", "account_name": "บริษัท มากุโระ กรุ๊ป จำกัด (มหาชน)", "Jan": 193134.0, "Feb": 120602.0, "Mar": 87625.0, "Apr": 94103.0, "May": 66880.0, "runrate": 86387.0}, {"staff": "Dent", "account_name": "เครือ บริษัท โนวา อินเตอร์เทรด จำกัด", "Jan": 314149.0, "Feb": 262973.0, "Mar": 244336.0, "Apr": 251554.0, "May": 253691.0, "runrate": 327685.0}, {"staff": "Dent", "account_name": "บริษัท เอสเจ ฟู้ด เวิลด์ จำกัด", "Jan": 384944.0, "Feb": 339409.0, "Mar": 310054.0, "Apr": 192450.0, "May": 171905.0, "runrate": 222043.0}, {"staff": "Dent", "account_name": "บริษัท ศรีอยุธยา ฮอสปิทาลิตี้ จำกัด & บริษัท วรรณยิ่ง จำกัด & บริษัท 196 จำกัด", "Jan": 265498.0, "Feb": 203019.0, "Mar": 181645.0, "Apr": 193368.0, "May": 162850.0, "runrate": 210347.0}, {"staff": "Dent", "account_name": "บริษัท โฮตารุ คอร์ปอเรท จำกัด & บริษัท ทีเคเค แอสโซซิเอท จำกัด", "Jan": 253014.0, "Feb": 232470.0, "Mar": 212413.0, "Apr": 215470.0, "May": 153564.0, "runrate": 198354.0}, {"staff": "Dent", "account_name": "เครือ เฮงนำเฮง", "Jan": 134966.0, "Feb": 120694.0, "Mar": 166523.0, "Apr": 165192.0, "May": 156793.0, "runrate": 202524.0}, {"staff": "Dent", "account_name": "บริษัท โทคุ ไทยแลนด์ จำกัด", "Jan": 198572.0, "Feb": 194151.0, "Mar": 172972.0, "Apr": 162685.0, "May": 148350.0, "runrate": 191618.0}, {"staff": "Dent", "account_name": "บริษัท ไอแอม บุชเชอร์ จำกัด", "Jan": 136296.0, "Feb": 143605.0, "Mar": 242543.0, "Apr": 414779.0, "May": 234564.0, "runrate": 302979.0}, {"staff": "Dent", "account_name": "บริษัท คฤหาสน์สราสินี จำกัด", "Jan": 291282.0, "Feb": 210852.0, "Mar": 183300.0, "Apr": 214527.0, "May": 105522.0, "runrate": 136299.0}, {"staff": "Dent", "account_name": "บริษัท โนบีฟ จำกัด", "Jan": 169380.0, "Feb": 171579.0, "Mar": 162919.0, "Apr": 159242.0, "May": 141996.0, "runrate": 183411.0}, {"staff": "Dent", "account_name": "บริษัท ฟีนิกซ์ ฟู้ดส์ เวิลด์ จำกัด สาขา 1 & บริษัท เลอ ความ ลัค จำกัด", "Jan": 165250.0, "Feb": 97998.0, "Mar": 122024.0, "Apr": 154140.0, "May": 232572.0, "runrate": 300406.0}, {"staff": "Dent", "account_name": "Renaissance Pattaya", "Jan": 170997.0, "Feb": 133471.0, "Mar": 127191.0, "Apr": 136868.0, "May": 80394.0, "runrate": 103842.0}, {"staff": "Dent", "account_name": "Hilton Garden Inn Bangkok Silom", "Jan": 103970.0, "Feb": 83989.0, "Mar": 69426.0, "Apr": 44230.0, "May": 43874.0, "runrate": 56671.0}, {"staff": "Dent", "account_name": "บริษัท ซูชินะ จำกัด & บริษัท ฟู้ดอินดี้ จำกัด & บริษัท ไอดีล แอนด์ ไอเดีย จำกัด", "Jan": 124148.0, "Feb": 126339.0, "Mar": 132231.0, "Apr": 106706.0, "May": 106930.0, "runrate": 138118.0}, {"staff": "Dent", "account_name": "บริษัท พรีโม ฟู้ด แอนด์ เบฟเวอเรจ จำกัด & บริษัท เอ็กเพรสโซ่ คาเฟ จำกัด", "Jan": 170372.0, "Feb": 149168.0, "Mar": 141521.0, "Apr": 128673.0, "May": 81489.0, "runrate": 105256.0}, {"staff": "Dent", "account_name": "Carlton Hotel Bangkok Sukhumvit", "Jan": 173181.0, "Feb": 192078.0, "Mar": 163921.0, "Apr": 164930.0, "May": 86872.0, "runrate": 112209.0}, {"staff": "Dent", "account_name": "บริษัท บีจี ทีม จำกัด & บริษัท เอ็กซิท รีสอร์ท แมเนจเมนท์ จำกัด", "Jan": 161746.0, "Feb": 110517.0, "Mar": 95870.0, "Apr": 135992.0, "May": 104890.0, "runrate": 135483.0}, {"staff": "Dent", "account_name": "บริษัท ซัมมิท วินด์มิลล์ กอล์ฟ คลับ จำกัด", "Jan": 148535.0, "Feb": 137775.0, "Mar": 115981.0, "Apr": 122748.0, "May": 93373.0, "runrate": 120607.0}, {"staff": "Dent", "account_name": "บริษัท ซิตี้สเปซ (ประเทศไทย) จำกัด", "Jan": 138897.0, "Feb": 108012.0, "Mar": 80939.0, "Apr": 112858.0, "May": 99472.0, "runrate": 128485.0}, {"staff": "Dent", "account_name": "บริษัท โตโต้ โฮลดิ้ง จำกัด & ห้างหุ้นส่วนจำกัด เจียเซ่งเฮง", "Jan": 147791.0, "Feb": 102914.0, "Mar": 112873.0, "Apr": 97206.0, "May": 77430.0, "runrate": 100014.0}, {"staff": "Dent", "account_name": "บริษัท ชิโซ ดีไลท์ จำกัด", "Jan": 100669.0, "Feb": 111626.0, "Mar": 110843.0, "Apr": 108307.0, "May": 65102.0, "runrate": 84090.0}, {"staff": "Dent", "account_name": "บริษัท ยัสปาล จำกัด", "Jan": 171718.0, "Feb": 148789.0, "Mar": 106842.0, "Apr": 102770.0, "May": 63083.0, "runrate": 81482.0}, {"staff": "Dent", "account_name": "บริษัท สลิล ดีเวลลอปเม้นท์ จำกัด & บริษัท มาร์โค่ ดีเวลลอปเม้นท์ จำกัด", "Jan": 107892.0, "Feb": 85104.0, "Mar": 90745.0, "Apr": 90647.0, "May": 102349.0, "runrate": 132200.0}, {"staff": "Dent", "account_name": "บริษัท แจลลุกซ์ เอเซีย จำกัด", "Jan": 104052.0, "Feb": 95930.0, "Mar": 90373.0, "Apr": 93970.0, "May": 79076.0, "runrate": 102140.0}, {"staff": "Dent", "account_name": "บริษัท บ้านหลานยาย จำกัด & บริษัท ไลโย บีเคเค จำกัด", "Jan": 18240.0, "Feb": 15714.0, "Mar": 100376.0, "Apr": 71066.0, "May": 45062.0, "runrate": 58206.0}, {"staff": "Dent", "account_name": "เครือ นาราไทย", "Jan": 82881.0, "Feb": 84283.0, "Mar": 76995.0, "Apr": 22276.0, "May": 29196.0, "runrate": 37711.0}, {"staff": "Dent", "account_name": "บริษัท ทวินเมด จำกัด", "Jan": 0.0, "Feb": 0.0, "Mar": 11621.0, "Apr": 15157.0, "May": 22948.0, "runrate": 29642.0}, {"staff": "Ning", "account_name": "บริษัท ไอเบอร์รี่ โฮมเมด จำกัด", "Jan": 2522934.0, "Feb": 2260150.0, "Mar": 2528051.0, "Apr": 2384401.0, "May": 2350348.0, "runrate": 3035866.0}, {"staff": "Ning", "account_name": "บริษัท ปิโตรเลียมไทยคอร์ปอเรชั่น จำกัด (สำนักงานใหญ่) & บริษัท กาแฟพันธุ์ไทย จำกัด (สำนักงานใหญ่)", "Jan": 2065693.0, "Feb": 2310429.0, "Mar": 3009842.0, "Apr": 2731479.0, "May": 2402287.0, "runrate": 3102954.0}, {"staff": "Ning", "account_name": "เครือ บริษัท ดักแด้ กรุ๊ป จำกัด", "Jan": 1810364.0, "Feb": 2130972.0, "Mar": 2315211.0, "Apr": 1904644.0, "May": 1817338.0, "runrate": 2347395.0}, {"staff": "Ning", "account_name": "บริษัท ไทยสากล เอสเตท จำกัด", "Jan": 772165.0, "Feb": 645441.0, "Mar": 545905.0, "Apr": 498752.0, "May": 390732.0, "runrate": 504696.0}, {"staff": "Ning", "account_name": "บริษัท วีต้าเทรด จำกัด", "Jan": 572882.0, "Feb": 452357.0, "Mar": 521895.0, "Apr": 530042.0, "May": 435673.0, "runrate": 562744.0}, {"staff": "Ning", "account_name": "บริษัท ฮอบส์ อินเตอร์เนชั่นแนล กรุ๊ป จำกัด", "Jan": 714338.0, "Feb": 596976.0, "Mar": 407122.0, "Apr": 393457.0, "May": 272709.0, "runrate": 352249.0}, {"staff": "Ning", "account_name": "บริษัท จีเอฟเอ คอร์ปอเรชั่น (ไทยแลนด์) จำกัด", "Jan": 499752.0, "Feb": 462030.0, "Mar": 530129.0, "Apr": 563809.0, "May": 458021.0, "runrate": 591610.0}, {"staff": "Ning", "account_name": "บริษัท ลิฟวิ่ง แอนด์ ฟาซิลิตี้ จำกัด", "Jan": 352395.0, "Feb": 330092.0, "Mar": 377304.0, "Apr": 555903.0, "May": 399453.0, "runrate": 515960.0}, {"staff": "Ning", "account_name": "บริษัท บรูอิ้งแฮปปี้เนส จำกัด & บริษัท รอว์แมท คอฟฟี่ จำกัด", "Jan": 390675.0, "Feb": 410363.0, "Mar": 441363.0, "Apr": 452709.0, "May": 436344.0, "runrate": 563611.0}, {"staff": "Ning", "account_name": "เครือ Mickey Diner", "Jan": 369321.0, "Feb": 291395.0, "Mar": 315747.0, "Apr": 416115.0, "May": 315964.0, "runrate": 408121.0}, {"staff": "Ning", "account_name": "บริษัท ธนบุรี เวลบีอิ้ง จำกัด", "Jan": 258035.0, "Feb": 207701.0, "Mar": 178165.0, "Apr": 187736.0, "May": 195487.0, "runrate": 252504.0}, {"staff": "Ning", "account_name": "เครือ บริษัท มั่งมีไทยฟู๊ด จำกัด", "Jan": 52108.0, "Feb": 32013.0, "Mar": 60037.0, "Apr": 43701.0, "May": 30918.0, "runrate": 39936.0}, {"staff": "Ning", "account_name": "บริษัท บิซโบล จำกัด & บริษัท ฟู๊ด เอ็กซ์แพนชั่น จำกัด & บริษัท วอนเดอร์ ฟู๊ดส์ กรุ๊ป จำกัด", "Jan": 346920.0, "Feb": 256556.0, "Mar": 224645.0, "Apr": 113053.0, "May": 107924.0, "runrate": 139401.0}, {"staff": "Ning", "account_name": "บริษัท ยำ คอนเนคทีฟ จำกัด", "Jan": 283838.0, "Feb": 227391.0, "Mar": 248287.0, "Apr": 271724.0, "May": 248837.0, "runrate": 321414.0}, {"staff": "Ning", "account_name": "บริษัท บาเฮ่าเทียนมี่ จำกัด & บริษัท เลขที่แปด จำกัด & บริษัท ซินแซโกย จำกัด", "Jan": 350228.0, "Feb": 371423.0, "Mar": 351714.0, "Apr": 273086.0, "May": 200915.0, "runrate": 259516.0}, {"staff": "Ning", "account_name": "บริษัท บีที ซงฟา (ประเทศไทย) จำกัด & บริษัท เอฟอาร์ (ประเทศไทย) จำกัด & บริษัท เทสเตอร์ ฟู้ด (ประเทศไทย) จำกัด", "Jan": 306123.0, "Feb": 281329.0, "Mar": 285193.0, "Apr": 257368.0, "May": 203105.0, "runrate": 262344.0}, {"staff": "Ning", "account_name": "บริษัท เซิร์ฟ เวลล์ เมเนจเม้นท์ จำกัด (WUS Printed Circuit) (OOA)", "Jan": 0.0, "Feb": 86599.0, "Mar": 377454.0, "Apr": 259228.0, "May": 187287.0, "runrate": 241912.0}, {"staff": "Ning", "account_name": "บริษัท ไอเอสเอฟ ฟู้ด จำกัด & บริษัท อินซาฟ ดีเวลล็อปเม้นท์ จำกัด", "Jan": 306331.0, "Feb": 248817.0, "Mar": 280767.0, "Apr": 295901.0, "May": 161392.0, "runrate": 208464.0}, {"staff": "Ning", "account_name": "บริษัท มิตรพันธ์ แอ็สเซ็ท ดีเวลอปเม้นท์ จำกัด", "Jan": 279150.0, "Feb": 255354.0, "Mar": 214138.0, "Apr": 176423.0, "May": 131556.0, "runrate": 169926.0}, {"staff": "Ning", "account_name": "Tribe122 Hotel", "Jan": 189445.0, "Feb": 193159.0, "Mar": 141530.0, "Apr": 147956.0, "May": 83095.0, "runrate": 107330.0}, {"staff": "Ning", "account_name": "บริษัท แพลนทิฟุล จำกัด & บริษัท แพลนท์ แพชชั่น จำกัด", "Jan": 181468.0, "Feb": 84798.0, "Mar": 106825.0, "Apr": 94849.0, "May": 106389.0, "runrate": 137419.0}, {"staff": "Ning", "account_name": "บริษัท กินดื่ม จำกัด", "Jan": 157490.0, "Feb": 167858.0, "Mar": 136747.0, "Apr": 111971.0, "May": 236452.0, "runrate": 305417.0}, {"staff": "Ning", "account_name": "Lilit Hotel", "Jan": 147322.0, "Feb": 112490.0, "Mar": 99502.0, "Apr": 125021.0, "May": 105119.0, "runrate": 135779.0}, {"staff": "Ning", "account_name": "บริษัท กอร์เมท์ อินโนเวชัน จำกัด", "Jan": 116223.0, "Feb": 120699.0, "Mar": 157873.0, "Apr": 143212.0, "May": 105190.0, "runrate": 135871.0}, {"staff": "Ning", "account_name": "บริษัท ทรอพพิคอล ไอแลนด์ จำกัด", "Jan": 0.0, "Feb": 0.0, "Mar": 0.0, "Apr": 0.0, "May": 0.0, "runrate": 0.0}, {"staff": "Ning", "account_name": "บริษัท ไทเรียว ฟู้ด จำกัด", "Jan": 102340.0, "Feb": 87183.0, "Mar": 95689.0, "Apr": 90347.0, "May": 54958.0, "runrate": 70987.0}, {"staff": "Tos", "account_name": "เครือ บริษัท ไทยเกษม เรสโตรองต์ จำกัด", "Jan": 3956997.0, "Feb": 2856592.0, "Mar": 2957547.0, "Apr": 2917854.0, "May": 2344481.0, "runrate": 3028287.0}, {"staff": "Tos", "account_name": "เครือ บริษัท ฮอตพอตแมน กรุ๊ป จำกัด", "Jan": 1593444.0, "Feb": 1394475.0, "Mar": 1762747.0, "Apr": 1629001.0, "May": 1496681.0, "runrate": 1933213.0}, {"staff": "Tos", "account_name": "เครือ เบทาโกร", "Jan": 703921.0, "Feb": 684771.0, "Mar": 869290.0, "Apr": 630326.0, "May": 582025.0, "runrate": 751783.0}, {"staff": "Tos", "account_name": "บริษัท ซาวบ้าน จำกัด", "Jan": 857552.0, "Feb": 899918.0, "Mar": 869026.0, "Apr": 829722.0, "May": 652095.0, "runrate": 842289.0}, {"staff": "Tos", "account_name": "Seefah Group", "Jan": 718576.0, "Feb": 812890.0, "Mar": 888871.0, "Apr": 782867.0, "May": 788252.0, "runrate": 1018159.0}, {"staff": "Tos", "account_name": "เครือเคนชิน อิซากายะ", "Jan": 489673.0, "Feb": 378284.0, "Mar": 410446.0, "Apr": 388077.0, "May": 317955.0, "runrate": 410691.0}, {"staff": "Tos", "account_name": "บริษัท แลนด์มาร์ค โฮเต็ล แมเนจเม้นท์ จำกัด", "Jan": 143444.0, "Feb": 96046.0, "Mar": 123586.0, "Apr": 97545.0, "May": 109622.0, "runrate": 141595.0}, {"staff": "Tos", "account_name": "เครือ บริษัท เรดแพนด้ายากินิกุ จำกัด", "Jan": 385694.0, "Feb": 350373.0, "Mar": 419531.0, "Apr": 500224.0, "May": 441577.0, "runrate": 570370.0}, {"staff": "Tos", "account_name": "บริษัท เฌอฌิมน์ จำกัด & บริษัท วิเสทวิโส จำกัด", "Jan": 320411.0, "Feb": 301996.0, "Mar": 362258.0, "Apr": 292828.0, "May": 259906.0, "runrate": 335712.0}, {"staff": "Tos", "account_name": "บริษัท พ็อกเก็ต ร็อกเก็ต จำกัด", "Jan": 403079.0, "Feb": 297936.0, "Mar": 312141.0, "Apr": 375792.0, "May": 306833.0, "runrate": 396325.0}, {"staff": "Tos", "account_name": "เครือ บริษัท โคโค โกลบอล ฮอสพิทอลลิตี้ (ประเทศไทย)", "Jan": 327693.0, "Feb": 280119.0, "Mar": 359589.0, "Apr": 342918.0, "May": 225399.0, "runrate": 291141.0}, {"staff": "Tos", "account_name": "เครือ เสะเมะรุเซะ", "Jan": 356337.0, "Feb": 352859.0, "Mar": 372107.0, "Apr": 290112.0, "May": 247428.0, "runrate": 319594.0}, {"staff": "Tos", "account_name": "บริษัท เฮอร์มีส กอล์ฟ คลับ จำกัด", "Jan": 366035.0, "Feb": 339166.0, "Mar": 283750.0, "Apr": 317138.0, "May": 150439.0, "runrate": 194317.0}, {"staff": "Tos", "account_name": "บริษัท 99 เรียลเอสเตท ดีเวลลอปเม้นท์ จำกัด & บริษัท สัตนาม ฮอสพิแทลลิตี้ (ประเทศไทย) จำกัด &  บริษัท บริคส์ รีโวลูชั่น จำกัด", "Jan": 464461.0, "Feb": 442694.0, "Mar": 427596.0, "Apr": 309468.0, "May": 189492.0, "runrate": 244761.0}, {"staff": "Tos", "account_name": "บริษัท ฟอร์จูน ซิกส์ จำกัด & บริษัท ซิกซ์ พ้อย วัน จำกัด", "Jan": 260210.0, "Feb": 238999.0, "Mar": 270080.0, "Apr": 230457.0, "May": 185274.0, "runrate": 239313.0}, {"staff": "Tos", "account_name": "เครือ บริษัท ไทยเบฟเวอเรจ จำกัด", "Jan": 174857.0, "Feb": 190248.0, "Mar": 261791.0, "Apr": 336238.0, "May": 187469.0, "runrate": 242147.0}, {"staff": "Tos", "account_name": "บริษัท โนเบิล เรสเตอท์รองต์ จำกัด & บริษัท ฟู๊ดมาสเตอร์ จำกัด & บริษัท ชินจูกุ คาเฟ่ จำกัด", "Jan": 146489.0, "Feb": 164958.0, "Mar": 158819.0, "Apr": 232487.0, "May": 149295.0, "runrate": 192839.0}, {"staff": "Tos", "account_name": "บริษัท คุ้มสึ จำกัด", "Jan": 173888.0, "Feb": 240558.0, "Mar": 301443.0, "Apr": 333897.0, "May": 242351.0, "runrate": 313037.0}, {"staff": "Tos", "account_name": "บริษัท ซูกิชิ อินเตอร์กรุ๊ป จำกัด & บริษัท เจริญเพิ่มพูนโภคทรัพย์ จำกัด", "Jan": 55549.0, "Feb": 65618.0, "Mar": 78728.0, "Apr": 93380.0, "May": 56824.0, "runrate": 73398.0}, {"staff": "Tos", "account_name": "บริษัท เจ เจ สยามพัฒนา จำกัด & บริษัท พล็อททวิสต์ จำกัด", "Jan": 239796.0, "Feb": 234939.0, "Mar": 165599.0, "Apr": 194829.0, "May": 215249.0, "runrate": 278031.0}, {"staff": "Tos", "account_name": "บริษัท ซีบี ทีเอ เทรดดิ้ง จำกัด (สำนักงานใหญ่) & บริษัท สกาย ควิซีน กรุ๊ป จำกัด", "Jan": 39563.0, "Feb": 875594.0, "Mar": 983958.0, "Apr": 13168.0, "May": 9052.0, "runrate": 11692.0}, {"staff": "Tos", "account_name": "บริษัท ทาการะ เอฟ แอนด์ บี จำกัด", "Jan": 140944.0, "Feb": 147772.0, "Mar": 29761.0, "Apr": 159011.0, "May": 132023.0, "runrate": 170530.0}, {"staff": "Tos", "account_name": "บริษัท เอฟบีเบลล์ลี่ จำกัด", "Jan": 157094.0, "Feb": 161004.0, "Mar": 141299.0, "Apr": 140265.0, "May": 108383.0, "runrate": 139995.0}, {"staff": "Tos", "account_name": "บริษัท เดอะเรสเตอร์รองท์ กรุ๊ป จำกัด", "Jan": 154260.0, "Feb": 138083.0, "Mar": 143694.0, "Apr": 211276.0, "May": 124666.0, "runrate": 161027.0}, {"staff": "Tos", "account_name": "บริษัท เดอะเรสเตอร์รองท์ กรุ๊ป จำกัด", "Jan": 154260.0, "Feb": 138083.0, "Mar": 143694.0, "Apr": 211276.0, "May": 124666.0, "runrate": 161027.0}, {"staff": "Tos", "account_name": "บริษัท ธนจิรา โฮม จำกัด & บริษัท แท็ตเลอร์ จำกัด & บริษัท ธนจิรา รีเทล คอร์ปอเรชั่น จำกัด (มหาชน)", "Jan": 158024.0, "Feb": 112193.0, "Mar": 132685.0, "Apr": 198495.0, "May": 135548.0, "runrate": 175083.0}, {"staff": "Tos", "account_name": "บริษัท ซีเลค เซอร์วิส พาร์ทเนอร์ จำกัด", "Jan": 41525.0, "Feb": 224636.0, "Mar": 220267.0, "Apr": 210463.0, "May": 141399.0, "runrate": 182640.0}, {"staff": "Tos", "account_name": "บริษัท ชาโต เดอ แบงคอค จำกัด", "Jan": 0.0, "Feb": 0.0, "Mar": 0.0, "Apr": 105702.0, "May": 85665.0, "runrate": 110651.0}, {"staff": "Tos", "account_name": "บริษัท ส้มพาสุข จำกัด", "Jan": 39033.0, "Feb": 206038.0, "Mar": 173132.0, "Apr": 133242.0, "May": 88280.0, "runrate": 114028.0}, {"staff": "Tos", "account_name": "บริษัท เพลิคาน่า (ประเทศไทย) จำกัด", "Jan": 90197.0, "Feb": 49402.0, "Mar": 1498.0, "Apr": 0.0, "May": 0.0, "runrate": 0.0}, {"staff": "Tos", "account_name": "บริษัท โกพิซซ่า จำกัด", "Jan": 82413.0, "Feb": 72048.0, "Mar": 103598.0, "Apr": 68297.0, "May": 42385.0, "runrate": 54747.0}, {"staff": "Tos", "account_name": "Thai Lion Mentari co.,Ltd", "Jan": 0.0, "Feb": 0.0, "Mar": 36433.0, "Apr": 17940.0, "May": 35194.0, "runrate": 45459.0}, {"staff": "Tos", "account_name": "บริษัท เพอร์เฟค สเตป จำกัด", "Jan": 6474.0, "Feb": 13664.0, "Mar": 56526.0, "Apr": 60319.0, "May": 48616.0, "runrate": 62796.0}, {"staff": "Tos", "account_name": "PMW INTERNATIONAL CO.,LTD.", "Jan": 33537.0, "Feb": 17328.0, "Mar": 1919.0, "Apr": 16749.0, "May": 5405.0, "runrate": 6982.0}, {"staff": "Kwang", "account_name": "เครือ บริษัท โลวา ฮอสพิแทลลิที จำกัด", "Jan": 2150648.0, "Feb": 1855089.0, "Mar": 1741632.0, "Apr": 1636064.0, "May": 1377163.0, "runrate": 1778836.0}, {"staff": "Kwang", "account_name": "บริษัท เบรคฟาสต์ สตอรี่ จำกัด", "Jan": 1115445.0, "Feb": 952914.0, "Mar": 1077074.0, "Apr": 1056540.0, "May": 784646.0, "runrate": 1013501.0}, {"staff": "Kwang", "account_name": "เครือ Sarnies Coffee", "Jan": 1484448.0, "Feb": 1321227.0, "Mar": 1482500.0, "Apr": 1318457.0, "May": 1044673.0, "runrate": 1349369.0}, {"staff": "Kwang", "account_name": "เครือ บริษัท ยินดีต้อนรับ 65 จำกัด", "Jan": 1016758.0, "Feb": 897914.0, "Mar": 1311008.0, "Apr": 1289562.0, "May": 1186555.0, "runrate": 1532633.0}, {"staff": "Kwang", "account_name": "เครือ บริษัท พีพีจี ฮีลส์ จำกัด", "Jan": 996679.0, "Feb": 939752.0, "Mar": 972225.0, "Apr": 1971056.0, "May": 832498.0, "runrate": 1075310.0}, {"staff": "Kwang", "account_name": "เครือ บริษัท ภิรัชแอนด์บียอนด์เวนเจอร์ส จำกัด", "Jan": 782114.0, "Feb": 705854.0, "Mar": 801657.0, "Apr": 497149.0, "May": 513015.0, "runrate": 662644.0}, {"staff": "Kwang", "account_name": "เครือ บริษัท สมบัติเติมตระกูล จำกัด", "Jan": 694002.0, "Feb": 677317.0, "Mar": 697118.0, "Apr": 700854.0, "May": 575567.0, "runrate": 743441.0}, {"staff": "Kwang", "account_name": "เครือ บริษัท สุขใจ นำเสนอ จำกัด", "Jan": 734869.0, "Feb": 653526.0, "Mar": 696899.0, "Apr": 536662.0, "May": 460544.0, "runrate": 594869.0}, {"staff": "Kwang", "account_name": "บริษัท โนส ที (ประเทศไทย) จำกัด", "Jan": 11109.0, "Feb": 0.0, "Mar": 0.0, "Apr": 0.0, "May": 0.0, "runrate": 0.0}, {"staff": "Kwang", "account_name": "บริษัท โรชาน อินเตอร์เนชั่นแนล จำกัด", "Jan": 364703.0, "Feb": 245690.0, "Mar": 281265.0, "Apr": 314709.0, "May": 225492.0, "runrate": 291260.0}, {"staff": "Kwang", "account_name": "เครือ บริษัท บ้านสมถวิลซีเนียร์แคร์ จำกัด", "Jan": 285964.0, "Feb": 267304.0, "Mar": 285798.0, "Apr": 319167.0, "May": 255780.0, "runrate": 330382.0}, {"staff": "Kwang", "account_name": "บริษัท เอกอิ่มทรัพย์ จำกัด & บริษัท เอฟอี เทคโนโลยี จำกัด & บริษัท ปิ่นโต24 จำกัด", "Jan": 237378.0, "Feb": 251508.0, "Mar": 269934.0, "Apr": 279149.0, "May": 210679.0, "runrate": 272127.0}, {"staff": "Kwang", "account_name": "บริษัท ซัมเมอร์ส พิซซ่า จำกัด & บริษัท เรมิดี้ บางรัก จำกัด & บริษัท เดอะ ซีฟู้ด บอส จำกัด", "Jan": 285068.0, "Feb": 297790.0, "Mar": 279945.0, "Apr": 305860.0, "May": 175134.0, "runrate": 226215.0}, {"staff": "Kwang", "account_name": "Salada (Parent)", "Jan": 280365.0, "Feb": 240990.0, "Mar": 255085.0, "Apr": 232740.0, "May": 193660.0, "runrate": 250144.0}, {"staff": "Kwang", "account_name": "บริษัท ดิ เอ็กซ์เซคคิวทิฟ เลาจ์ (ไทยแลนด์) จำกัด", "Jan": 263757.0, "Feb": 274220.0, "Mar": 203256.0, "Apr": 217001.0, "May": 145661.0, "runrate": 188145.0}, {"staff": "Kwang", "account_name": "บริษัท ชินกู่ คอนเนค จำกัด", "Jan": 239720.0, "Feb": 199839.0, "Mar": 91024.0, "Apr": 62447.0, "May": 56583.0, "runrate": 73086.0}, {"staff": "Kwang", "account_name": "บริษัท เบรฟแบรนด์ จำกัด & บริษัท เบรฟ เบเกอร์ จำกัด", "Jan": 328539.0, "Feb": 287966.0, "Mar": 177315.0, "Apr": 368776.0, "May": 172603.0, "runrate": 222945.0}, {"staff": "Kwang", "account_name": "บริษัท เค สตรีท จำกัด & บริษัท เดอะ เกรท เรสตอรองส์ กรุ๊ป จำกัด", "Jan": 309707.0, "Feb": 272039.0, "Mar": 317428.0, "Apr": 250231.0, "May": 208558.0, "runrate": 269388.0}, {"staff": "Kwang", "account_name": "เครือ บริษัท ข้าวสารพาเลซ จำกัด", "Jan": 249391.0, "Feb": 244493.0, "Mar": 222370.0, "Apr": 183810.0, "May": 128610.0, "runrate": 166122.0}, {"staff": "Kwang", "account_name": "บริษัท ริเวอร์ไว้บ จำกัด", "Jan": 246949.0, "Feb": 251682.0, "Mar": 202287.0, "Apr": 149557.0, "May": 95476.0, "runrate": 123324.0}, {"staff": "Kwang", "account_name": "SOL and LUNA", "Jan": 200819.0, "Feb": 220480.0, "Mar": 219307.0, "Apr": 181816.0, "May": 107671.0, "runrate": 139074.0}, {"staff": "Kwang", "account_name": "บริษัท มีเดียฟร้อนท์ จำกัด & บริษัท สิริพัฒนทรัพย์ โฮเทลส์ กรุงเทพ จำกัด", "Jan": 174555.0, "Feb": 186428.0, "Mar": 163192.0, "Apr": 161810.0, "May": 130995.0, "runrate": 169202.0}, {"staff": "Kwang", "account_name": "บริษัท ทริปเปิ้ล เอ็น คอร์ปอเรชั่น จำกัด", "Jan": 179362.0, "Feb": 122343.0, "Mar": 184530.0, "Apr": 179852.0, "May": 137447.0, "runrate": 177535.0}, {"staff": "Kwang", "account_name": "บริษัท เลท มี ที จำกัด", "Jan": 120577.0, "Feb": 230222.0, "Mar": 212997.0, "Apr": 212441.0, "May": 171778.0, "runrate": 221879.0}, {"staff": "Kwang", "account_name": "เครือ คั่วพริกเกลือ", "Jan": 132487.0, "Feb": 118521.0, "Mar": 137622.0, "Apr": 106239.0, "May": 77360.0, "runrate": 99923.0}, {"staff": "Kwang", "account_name": "บริษัท บุชเชอร์ แฟคตอรี่ เรสเตอรองต์ จำกัด", "Jan": 151411.0, "Feb": 132955.0, "Mar": 113763.0, "Apr": 69213.0, "May": 65486.0, "runrate": 84586.0}, {"staff": "Kwang", "account_name": "บริษัท ธรรมชาติ ซีฟู้ด รีเทล จำกัด", "Jan": 75192.0, "Feb": 75190.0, "Mar": 77841.0, "Apr": 63575.0, "May": 59524.0, "runrate": 76885.0}, {"staff": "Kwang", "account_name": "บริษัท เออแซ่บ ฟู้ด แอนด์ เรสเตอรองท์ จำกัด & บริษัท เดอะ กูร์เมต์ มหานคร จำกัด & บริษัท แซ่บร่ำรวยมั่งคั่ง จำกัด", "Jan": 0.0, "Feb": 0.0, "Mar": 0.0, "Apr": 0.0, "May": 0.0, "runrate": 0.0}, {"staff": "Nitcha", "account_name": "บริษัท คอมพานี บี จำกัด", "Jan": 5865135.0, "Feb": 4696996.0, "Mar": 1590495.0, "Apr": 0.0, "May": 0.0, "runrate": 0.0}, {"staff": "Nitcha", "account_name": "บริษัท ชาคาริคิ 432 05 จำกัด & บริษัท ชาคาริคิ 432 จำกัด", "Jan": 1768207.0, "Feb": 1559439.0, "Mar": 1589214.0, "Apr": 1547747.0, "May": 1294326.0, "runrate": 1671837.0}, {"staff": "Nitcha", "account_name": "บริษัท บางกอก เรสเตอรอง กรุ๊ป จำกัด & บริษัท สยามนู้ดเดิ้ลอินเตอร์กรุ๊ป จำกัด & บริษัท อธีน่า โฮลดิ้ง จำกัด", "Jan": 1253827.0, "Feb": 1109275.0, "Mar": 1268918.0, "Apr": 1152727.0, "May": 856307.0, "runrate": 1106063.0}, {"staff": "Nitcha", "account_name": "บริษัท เมเจอร์ โบว์ล กรุ้ป จำกัด", "Jan": 1335666.0, "Feb": 1043938.0, "Mar": 1114081.0, "Apr": 929304.0, "May": 810939.0, "runrate": 1047462.0}, {"staff": "Nitcha", "account_name": "บริษัท อิ่มทรัพย์ โกลบอล คูซีน จำกัด & บริษัท อิ่มสหาย คูซีน จำกัด", "Jan": 1156263.0, "Feb": 5508.0, "Mar": 999.0, "Apr": 0.0, "May": 0.0, "runrate": 0.0}, {"staff": "Nitcha", "account_name": "บริษัท บาร์เทลส จำกัด", "Jan": 579235.0, "Feb": 568733.0, "Mar": 679786.0, "Apr": 659484.0, "May": 542300.0, "runrate": 700471.0}, {"staff": "Nitcha", "account_name": "เครือ บริษัท บางกอก ไซเซ ซากาบะ จำกัด", "Jan": 586423.0, "Feb": 457611.0, "Mar": 486395.0, "Apr": 520871.0, "May": 366147.0, "runrate": 472940.0}, {"staff": "Nitcha", "account_name": "บริษัท เอบีพี คาเฟ (ประเทศไทย) จำกัด & บริษัท เกรฮาวด์ คาเฟ่ จำกัด & บริษัท โกลเด้น โดนัท (ประเทศไทย) จำกัด", "Jan": 367444.0, "Feb": 344995.0, "Mar": 447145.0, "Apr": 357461.0, "May": 224978.0, "runrate": 290597.0}, {"staff": "Nitcha", "account_name": "บริษัท เดย์โทน่า เรสเตอรองต์ กรุ๊ป จำกัด", "Jan": 495096.0, "Feb": 427371.0, "Mar": 479386.0, "Apr": 447973.0, "May": 336079.0, "runrate": 434102.0}, {"staff": "Nitcha", "account_name": "บริษัท พี ที อิมเป็กซ์ จำกัด (สำนักงานใหญ่) & บริษัท แอ็บบา อินฟินิตี้ จำกัด (สำนักงานใหญ่) & บริษัท เอส วาย บี เอ็ม เอ็นจิเนียริ่ง จำกัด", "Jan": 500421.0, "Feb": 420190.0, "Mar": 466341.0, "Apr": 483808.0, "May": 426663.0, "runrate": 551106.0}, {"staff": "Nitcha", "account_name": "บริษัท แอลเซเว่น เบฟเวอเรจ แอนด์ ฟู้ด จำกัด", "Jan": 278324.0, "Feb": 481291.0, "Mar": 302047.0, "Apr": 412614.0, "May": 313267.0, "runrate": 404636.0}, {"staff": "Nitcha", "account_name": "บริษัท ฟู้ด ออนเนอร์ จำกัด", "Jan": 417337.0, "Feb": 382778.0, "Mar": 406109.0, "Apr": 311132.0, "May": 201728.0, "runrate": 260566.0}, {"staff": "Nitcha", "account_name": "บริษัท ดิ เอราวัณ กรุ๊ป จำกัด", "Jan": 301115.0, "Feb": 341719.0, "Mar": 291264.0, "Apr": 353475.0, "May": 198834.0, "runrate": 256827.0}, {"staff": "Nitcha", "account_name": "บริษัท เจเอเอส แอสเซ็ท จำกัด", "Jan": 268842.0, "Feb": 234639.0, "Mar": 196064.0, "Apr": 252509.0, "May": 113284.0, "runrate": 146325.0}, {"staff": "Nitcha", "account_name": "บริษัท ครัวอัปษร จำกัด", "Jan": 256098.0, "Feb": 206836.0, "Mar": 223985.0, "Apr": 192974.0, "May": 151617.0, "runrate": 195838.0}, {"staff": "Nitcha", "account_name": "บริษัท ไวทัลลิตี้ ไทย อ๊อปโค จำกัด", "Jan": 236807.0, "Feb": 236418.0, "Mar": 238702.0, "Apr": 234343.0, "May": 187384.0, "runrate": 242037.0}, {"staff": "Nitcha", "account_name": "บริษัท อรุโณเทล จำกัด & บริษัท ศาลาอรุณ จำกัด & บริษัท วีแกน คอมมูนิตี้ จำกัด", "Jan": 417585.0, "Feb": 362633.0, "Mar": 176542.0, "Apr": 155557.0, "May": 110558.0, "runrate": 142804.0}, {"staff": "Nitcha", "account_name": "บริษัท ซีทูเอช จำกัด", "Jan": 150002.0, "Feb": 214331.0, "Mar": 199088.0, "Apr": 234120.0, "May": 108091.0, "runrate": 139618.0}, {"staff": "Nitcha", "account_name": "khaogroup", "Jan": 217624.0, "Feb": 249451.0, "Mar": 223715.0, "Apr": 230633.0, "May": 135716.0, "runrate": 175299.0}, {"staff": "Nitcha", "account_name": "บริษัท แอล เอ็น จี ฟู๊ด โปรดักส์  จำกัด", "Jan": 162202.0, "Feb": 171426.0, "Mar": 161495.0, "Apr": 153811.0, "May": 154106.0, "runrate": 199054.0}, {"staff": "Nitcha", "account_name": "บริษัท โวค อินเตอร์เนชั่นแนล จำกัด", "Jan": 115168.0, "Feb": 102217.0, "Mar": 138985.0, "Apr": 157170.0, "May": 142314.0, "runrate": 183823.0}, {"staff": "Nitcha", "account_name": "บริษัท เอ็ม เทล แมเนจเม้นท์ จำกัด", "Jan": 136289.0, "Feb": 138455.0, "Mar": 119435.0, "Apr": 93824.0, "May": 72773.0, "runrate": 93999.0}, {"staff": "Nitcha", "account_name": "เครือ หงเปา อีวี", "Jan": 141206.0, "Feb": 140650.0, "Mar": 165734.0, "Apr": 145196.0, "May": 110056.0, "runrate": 142156.0}, {"staff": "Nitcha", "account_name": "บริษัท หมอชิตแลนด์ จำกัด", "Jan": 152212.0, "Feb": 116033.0, "Mar": 200815.0, "Apr": 199581.0, "May": 154724.0, "runrate": 199852.0}, {"staff": "Nitcha", "account_name": "บริษัท มหาทรัพย์ ดีเวลลอปเม้นท์ จำกัด", "Jan": 0.0, "Feb": 76607.0, "Mar": 256061.0, "Apr": 236304.0, "May": 108671.0, "runrate": 140367.0}, {"staff": "Nitcha", "account_name": "บริษัท วัน ออริจิ้น ฮอสพิทัลลิตี้ จำกัด", "Jan": 85780.0, "Feb": 105676.0, "Mar": 142689.0, "Apr": 73453.0, "May": 86088.0, "runrate": 111197.0}, {"staff": "Nitcha", "account_name": "บริษัท เดอะ เฟรช ฟู้ด จำกัด & บริษัท เฟรช ฟู้ด ฮอสพิแทลลิตี้ จำกัด", "Jan": 69043.0, "Feb": 59524.0, "Mar": 84358.0, "Apr": 64422.0, "May": 82011.0, "runrate": 105931.0}, {"staff": "Nitcha", "account_name": "บริษัท ฟู้ด ไลบรารี่ จำกัด", "Jan": 231001.0, "Feb": 214549.0, "Mar": 190612.0, "Apr": 143044.0, "May": 63224.0, "runrate": 81665.0}, {"staff": "Nitcha", "account_name": "เครือ บริษัท ชูก้าเรย์แบงค็อก จำกัด", "Jan": 44949.0, "Feb": 29869.0, "Mar": 38705.0, "Apr": 59927.0, "May": 85321.0, "runrate": 110206.0}, {"staff": "Nitcha", "account_name": "บริษัท เดอะ เพรสทีจ ฮอซพิทาลิตี้ จํากัด", "Jan": 0.0, "Feb": 0.0, "Mar": 0.0, "Apr": 140571.0, "May": 106612.0, "runrate": 137708.0}, {"staff": "Nitcha", "account_name": "กะเพราช้างเผือกโภชนา - คุณปรเมศวร์ (Parent)", "Jan": 73022.0, "Feb": 56168.0, "Mar": 21492.0, "Apr": 0.0, "May": 0.0, "runrate": 0.0}, {"staff": "Nitcha", "account_name": "บริษัท อาหารปิ่นโต จำกัด", "Jan": 0.0, "Feb": 0.0, "Mar": 0.0, "Apr": 0.0, "May": 0.0, "runrate": 0.0}, {"staff": "Nitcha", "account_name": "บริษัท ปลูกผักเพราะรักแม่ จํากัด", "Jan": 2804.0, "Feb": 0.0, "Mar": 18437.0, "Apr": 24623.0, "May": 10129.0, "runrate": 13083.0}, {"staff": "Mild", "account_name": "บริษัท ฟูด คิทเช่น จำกัด & บริษัท เอพีที ฟู๊ดส์ จำกัด", "Jan": 4074679.0, "Feb": 3442338.0, "Mar": 3142890.0, "Apr": 3090868.0, "May": 2150150.0, "runrate": 2777277.0}, {"staff": "Mild", "account_name": "บริษัท พาวิน เมคเกอร์ ฟู้ด จำกัด", "Jan": 3014636.0, "Feb": 2808487.0, "Mar": 1129062.0, "Apr": 0.0, "May": 0.0, "runrate": 0.0}, {"staff": "Mild", "account_name": "เครือ เด็ดกะเพรา", "Jan": 1378087.0, "Feb": 1307887.0, "Mar": 1390572.0, "Apr": 1399106.0, "May": 1042512.0, "runrate": 1346578.0}, {"staff": "Mild", "account_name": "เครือ บริษัท ไซมิส เทสท์ จำกัด", "Jan": 841075.0, "Feb": 825818.0, "Mar": 829410.0, "Apr": 738501.0, "May": 688980.0, "runrate": 889932.0}, {"staff": "Mild", "account_name": "บริษัท เดอะ ช็อคโกแลต แฟคทอรี่ จำกัด", "Jan": 549441.0, "Feb": 422235.0, "Mar": 289388.0, "Apr": 542504.0, "May": 448917.0, "runrate": 579852.0}, {"staff": "Mild", "account_name": "บริษัท เปเปอร์เพลน โปรเจค จำกัด & บริษัท ทาโฮน่า จำกัด", "Jan": 537713.0, "Feb": 616559.0, "Mar": 496405.0, "Apr": 536321.0, "May": 360302.0, "runrate": 465391.0}, {"staff": "Mild", "account_name": "บริษัท อัคร ฮอสพิแทลลิตี้ จำกัด & บริษัท ล็อบสเตอร์ เพาเวอร์ จำกัด & บริษัท อัคร สกาย หนุมาน จำกัด", "Jan": 544731.0, "Feb": 542708.0, "Mar": 547336.0, "Apr": 632256.0, "May": 377207.0, "runrate": 487226.0}, {"staff": "Mild", "account_name": "บริษัท รีลิเกอร์ โฮลดิ้ง จำกัด", "Jan": 540340.0, "Feb": 506140.0, "Mar": 487989.0, "Apr": 450291.0, "May": 329634.0, "runrate": 425778.0}, {"staff": "Mild", "account_name": "บริษัท ทีเจ เฟเวอร์ กรุ๊ป จำกัด", "Jan": 84266.0, "Feb": 0.0, "Mar": 0.0, "Apr": 0.0, "May": 0.0, "runrate": 0.0}, {"staff": "Mild", "account_name": "บริษัท ไวน์คอนเน็คชั่น จำกัด & บริษัท เดสติโน แกสโทรโนมิก (ประเทศไทย) จำกัด", "Jan": 429047.0, "Feb": 268896.0, "Mar": 270030.0, "Apr": 320379.0, "May": 215161.0, "runrate": 277916.0}, {"staff": "Mild", "account_name": "เครือ บริษัท มีทลิเชียส จำกัด", "Jan": 419678.0, "Feb": 317580.0, "Mar": 280306.0, "Apr": 339251.0, "May": 187429.0, "runrate": 242095.0}, {"staff": "Mild", "account_name": "บริษัท บางกอกคลับ จำกัด", "Jan": 327592.0, "Feb": 249538.0, "Mar": 384499.0, "Apr": 214616.0, "May": 238107.0, "runrate": 307555.0}, {"staff": "Mild", "account_name": "Pattaya Marriott Resort Spa at Jomtien Beach", "Jan": 207975.0, "Feb": 313708.0, "Mar": 332711.0, "Apr": 296229.0, "May": 174090.0, "runrate": 224866.0}, {"staff": "Mild", "account_name": "บริษัท พีซ โอเรียนทัล ทีเฮ้าส์ จำกัด", "Jan": 304512.0, "Feb": 265595.0, "Mar": 279442.0, "Apr": 199243.0, "May": 181765.0, "runrate": 234779.0}, {"staff": "Mild", "account_name": "บริษัท โอเอสบี เฮ้าส์ จำกัด", "Jan": 185664.0, "Feb": 30181.0, "Mar": 59031.0, "Apr": 50477.0, "May": 31613.0, "runrate": 40834.0}, {"staff": "Mild", "account_name": "บริษัท ดิ เออเบิ้ลเอสเคป จำกัด (สำนักงานใหญ่) & บริษัท เออร์แบน เฮาส์ จำกัด", "Jan": 237192.0, "Feb": 217923.0, "Mar": 186059.0, "Apr": 205919.0, "May": 124239.0, "runrate": 160476.0}, {"staff": "Mild", "account_name": "บริษัท อาร์เอสเอส แพชชั่น จำกัด", "Jan": 231936.0, "Feb": 208325.0, "Mar": 272219.0, "Apr": 226014.0, "May": 179995.0, "runrate": 232493.0}, {"staff": "Mild", "account_name": "บริษัท คิทเช่นเมท จำกัด & บริษัท พราลีน ฟู้ด จำกัด", "Jan": 103673.0, "Feb": 104512.0, "Mar": 188910.0, "Apr": 207247.0, "May": 118544.0, "runrate": 153120.0}, {"staff": "Mild", "account_name": "เครือ บริษัท ห้างเซ็นทรัล ดีพาทเมนท์สโตร์ จํากัด", "Jan": 151109.0, "Feb": 119270.0, "Mar": 112000.0, "Apr": 97563.0, "May": 76618.0, "runrate": 98964.0}, {"staff": "Mild", "account_name": "โรงแรมซินนามอน เรสซิเดนซ์", "Jan": 189520.0, "Feb": 94006.0, "Mar": 203790.0, "Apr": 178309.0, "May": 83450.0, "runrate": 107789.0}, {"staff": "Mild", "account_name": "บริษัท ออเดรย์ กรุ๊ป อินคอร์ปอเรชั่น จำกัด & บริษัท เจพี แฟมิลี่ คาเฟ่ จำกัด", "Jan": 0.0, "Feb": 0.0, "Mar": 0.0, "Apr": 0.0, "May": 0.0, "runrate": 0.0}, {"staff": "Mild", "account_name": "บริษัท รักการกิน จำกัด & บริษัท เส้นอร่อย จำกัด", "Jan": 126356.0, "Feb": 124967.0, "Mar": 149634.0, "Apr": 157567.0, "May": 116034.0, "runrate": 149877.0}, {"staff": "Mild", "account_name": "บริษัท บลูโกลด์ คอฟฟี่ จำกัด", "Jan": 102603.0, "Feb": 96111.0, "Mar": 79279.0, "Apr": 154384.0, "May": 79181.0, "runrate": 102275.0}];
+
+const DATA=[
+["Dent","บริษัท ชาบู บารู จำกัด","Maintain","Low","P1","Hard","มุ่งดูแล Maintain ก่อน เพิ่มสาขาขอนแก่น"],
+["Dent","เครือ สล็อธ ชาบู","Maintain","Low","P2","Hard","Meat import ยังยาก"],
+["Dent","เครือ รวยปังปัง / รวยสบาย / รวยไม่หยุด","Uplift","High","P1","Easy","กำลังจะได้เกตุเตี๋ยว เพิ่งหลุดน้ำมันกับนม"],
+["Dent","เครือ ซีเอ็มซี เดอะ สตรีท","Uplift","Medium","P1","Easy","เปลี่ยนของ ARO เป็นแบรนด์อื่น"],
+["Dent","เครือ ริชเทสท์ฮับ","Uplift","Medium","P3","Medium","ยังพอเหลือ Opp แต่ติดต่อค่อนข้างยาก"],
+["Dent","สเต็กกินกับอาหารคลีน - คุณศรัณย์","Maintain","Low","P1","Hard","Full Cap ไม่เหลือ Cat"],
+["Dent","บริษัท มากุโระ กรุ๊ป","Maintain","Low","P3","Hard","ข้าม"],
+["Dent","บริษัท ทวินเมด & สกาย","Maintain","Low","P3","Hard","ร้านกาแฟ แทบไม่เหลืออะไร"],
+["Dent","บริษัท เอสเจ ฟู้ด เวิลด์","Maintain","Medium","P2","Hard","ติดปัญหาเรื่องเครดิต"],
+["Dent","เครือ โนวา อินเตอร์เทรด","Uplift","High","P1","Easy","Opp เยอะมาก เพิ่งได้ SKU list"],
+["Dent","บริษัท ศรีอยุธยา ฮอสปิทาลิตี้ กลุ่ม","Maintain","Low","P3","Hard","เปิด order manual"],
+["Dent","บริษัท โฮตารุ & ทีเคเค แอสโซซิเอท","Unknown","","P3","Medium","ต้องนัด Visit ก่อน"],
+["Dent","เครือ เฮงนำเฮง","Uplift","Medium","P2","Medium","Meat+Seafood มี Cap เพิ่งได้ร้านใหม่"],
+["Dent","บริษัท โทคุ ไทยแลนด์","Uplift","High","P2","Medium","ร้านทงคัตซึ ยังไม่ได้เนื้อสัตว์+ซีฟู๊ด"],
+["Dent","บริษัท คฤหาสน์สราสินี","Uplift","Medium","P2","Medium","ถ้าจัด Event จะได้ Volume เยอะมาก"],
+["Dent","บริษัท ไอแอม บุชเชอร์","Uplift","Medium","P1","Hard","มี Cap ซีฟู้ด แต่มีปัญหาคุณภาพกุ้ง"],
+["Dent","บริษัท โนบีฟ","Unknown","","P3","","ยังไม่ได้คุย"],
+["Dent","Renaissance Pattaya","Maintain","Low","P3","Hard","ยังไม่ได้ visit"],
+["Dent","Hilton Garden Inn Silom","Winback","Low","P2","Hard","เคสน้ำเอเวียง ต้องเข้าไปคุย"],
+["Dent","เครือ ฟีนิกซ์ ฟู้ดส์ & เลอ ความ ลัค","Uplift","Medium","P2","Hard","ร้านจัดงาน Event แต่ชอบติดหนี้"],
+["Dent","เครือ ซูชินะ & ฟู้ดอินดี้","Uplift","Medium","P2","Hard","ร้านอาหารญี่ปุ่น ยังซื้อไม่ครบ Cat"],
+["Dent","บริษัท พรีโม ฟู้ด & เอ็กเพรสโซ่","Unknown","","","","ยังไม่ได้คุย"],
+["Dent","Carlton Hotel Bangkok Sukhumvit","Maintain","Medium","P2","Hard","มี Cap แต่เสนอไปไม่ตอบ"],
+["Dent","บริษัท บีจี ทีม & เอ็กซิท รีสอร์ท","Maintain","Medium","P2","Hard","จะได้ Vol จากการจัด Event"],
+["Dent","บริษัท ซัมมิท วินด์มิลล์ กอล์ฟ","Maintain","Medium","P2","Hard","เหลือ SKU เล็กน้อย"],
+["Dent","บริษัท โตโต้ โฮลดิ้ง & เจียเซ่งเฮง","Uplift","High","P1","Easy","เหลือ Cat uplift เยอะ คุยแล้วค่อนข้างง่าย"],
+["Dent","บริษัท ซิตี้สเปซ (ประเทศไทย)","Maintain","Low","P3","Hard","โรงแรม สั่งเต็ม Cap แล้ว"],
+["Dent","บริษัท ชิโซ ดีไลท์","Maintain","Low","P3","Hard","โรงแรม สั่งเต็ม Cap แล้ว"],
+["Dent","บริษัท ยัสปาล","Maintain","Low","P3","Hard","ร้านกาแฟ ไม่มี SKU ให้ uplift"],
+["Dent","บริษัท แจลลุกซ์ เอเซีย","Uplift","High","P2","Hard","ร้านเทมปุระ ต้องไล่คุยแต่ละสาขา"],
+["Dent","บริษัท สลิล & มาร์โค่","Uplift","Low","P1","Easy","Beverage ชอบขาด เหลือสาขานึงไม่สั่ง"],
+["Dent","เครือ นาราไทย","Uplift","High","P1","Hard","เหลือ Cap เยอะ แต่ทำราคาไม่ได้"],
+["Dent","Felix","Uplift","High","P1","Easy","Opp เยอะมาก เครือเดียวกับโนวา"],
+["BB","เครือ HMA","Maintain","Medium","P1","Hard","แบ่งซื้อกับ Delish ผักนอกสู้ไม่ได้"],
+["BB","เครือ เท เอกมัย","Maintain","Low","P1","Hard","เต็ม Cap แต่จะเปิดสาขาเพิ่ม"],
+["BB","ปตท. น้ำมัน (Upcountry)","Maintain","Low","P1","Hard","ซื้อ SKU เดียว เปิดสาขาเรื่อยๆ"],
+["BB","เครือ LK Group","Maintain","Low","P1","Hard","เพิ่งหลุดน้ำมันไป"],
+["BB","เครือ มั่งมี โภชนา","Maintain","Low","P2","Hard","มี Cap Meat แต่สู้ CP ไม่ได้"],
+["BB","Nam Nam Pasta & Tapas","Uplift","Medium","P2","Hard","เจ้าของดูแลเอง ยังเหลือ Cooking"],
+["BB","บริษัท อูมามิ เรสเตอรองต์","Uplift","High","P1","Hard","เหลือ Cap เยอะ แต่ยังไม่แชร์เรา"],
+["BB","เครือ ข้าว โซ อิ กรุ๊ป","Maintain","Low","P1","Hard","เต็ม Cap แต่จะเปิดสาขาเพิ่ม"],
+["BB","ปตท. น้ำมัน (BKK)","Maintain","Low","P1","Hard","ซื้อ SKU เดียว เปิดสาขาเรื่อยๆ"],
+["BB","บริษัท อมารี พัทยา & โอโซ่","Maintain","Low","P2","Hard","โรงแรมซื้อเต็ม Cap แล้ว"],
+["BB","At Mind Group","Maintain","Low","P2","Hard","โรงแรมซื้อเต็ม Cap แล้ว"],
+["BB","บริษัท ที ดับบลิว เอส ที กลุ่ม","Maintain","Low","P1","Hard","เอเชียทีค seafood ซื้อตรง"],
+["BB","ดี.ดี.เอ็ม. โฮเทล","Maintain","Low","P3","Hard","โรงแรมซื้อเต็ม Cap แล้ว"],
+["BB","บริษัท เอ็มเบอร์ ตานี","Maintain","Low","P3","Hard","โรงแรมซื้อเต็ม Cap แล้ว"],
+["BB","บริษัท บางกอกเบียร์ & เอพีบีเอ","Uplift","Medium","P1","Easy","บาร์ ยังไม่ได้ซื้อ Beverage เรา"],
+["BB","บริษัท สมาร์ท ยูไนเต็ด & เชค แช็ค","Maintain","Low","P1","Hard","เต็ม Cap แล้ว"],
+["BB","บริษัท บีเอซี กูร์เมท เฮ้าส์","Uplift","Medium","P2","Medium","เหลือ Cap seafood"],
+["BB","บริษัท โบ.ลาน & สโลนส์","Maintain","Low","P1","Hard","เต็ม Cap แล้ว"],
+["BB","บริษัท ร่วมอิสสระ & ศรีพันวา","Maintain","Low","P2","Hard","เต็ม Cap แล้ว"],
+["BB","เครือ กินกันจัง","Maintain","Low","P3","Hard","เต็ม Cap เหลือผักแต่สู้ราคาไม่ได้"],
+["BB","บริษัท พีเบอร์รี่ ไทย","Uplift","Low","P1","Hard","เพิ่งได้ Beverage มา เหลือ Cap Household"],
+["BB","บริษัท โซยู ฟู้ด & สยามเบเวอร์ลี่","Uplift","Medium","P2","Hard","เปลี่ยนทีมจัดซื้อใหม่ เหลือ Meat & FV"],
+["BB","บริษัท นอสแทลจิค เอฟแอนด์บี","Maintain","Low","P1","Hard","เต็ม Cap แล้ว"],
+["BB","บริษัท พาข้าวก๋อ","Uplift","High","P2","Medium","ยังเหลือ Cap ที่พอจะเพิ่มได้"],
+["BB","บริษัท อินเดียเกท ฮอสพิเทลลิตี้","Skip","","","","ข้าม"],
+["BB","บริษัท คิงส์ตัน โฮลดิ้งส์","Maintain","Low","P3","Hard","โรงแรมซื้อเต็ม Cap แล้ว"],
+["BB","บริษัท เอเวอร์กรีน ฮอสพิทัลลิตี้","Uplift","","","","ยังไม่ได้ติดต่อ"],
+["BB","บริษัท แกดอะเบาท์ ฮอสพิทาลิตี้","Skip","","","","ข้าม"],
+["BB","บริษัท สยาม ออยล์ คอฟฟี่ (DODO)","Skip","","","","ข้าม"],
+["Ning","บริษัท ปิโตรเลียมไทย & กาแฟพันธุ์ไทย","Uplift","High","P1","Medium","มะนาวเลม่อน+เก็บสาขา BKK ให้ครบ"],
+["Ning","บริษัท ไอเบอร์รี่ โฮมเมด","Maintain","Medium","P1","Hard","โฟกัสครัวกลาง ทองสมิธ"],
+["Ning","เครือ ดักแด้ กรุ๊ป","Uplift","High","P1","Medium","Winback เนื้อ import + เปิดสาขาใหม่"],
+["Ning","บริษัท จีเอฟเอ คอร์ปอเรชั่น","Maintain","Low","P1","Medium","Full Cap ทำไรไม่ได้แล้ว"],
+["Ning","บริษัท ลิฟวิ่ง & ฟาซิลิตี้","Uplift","High","P1","Medium","Cooking+Meat+Liquor ยังไปได้ แต่ติดราคา"],
+["Ning","บริษัท วีต้าเทรด","Maintain","Low","P3","Hard","ผักยังได้อีกเยอะ แต่สู้ราคาไม่ไหว"],
+["Ning","บริษัท ไทยสากล เอสเตท","Maintain","Low","P1","Hard","ไม่มี Cat เพิ่ม"],
+["Ning","บริษัท บรูอิ้งแฮปปี้เนส & รอว์แมท","Maintain","Low","P3","Hard","ร้านกาแฟ เพิ่ม SKU ใหม่ไม่ได้"],
+["Ning","เครือ Mickey Diner","Uplift","High","P2","Medium","มี Cap DG ต้องคุยจัดซื้อหลายคน"],
+["Ning","บริษัท ฮอบส์ อินเตอร์เนชั่นแนล","Maintain","Low","P3","Hard","เหลือ Salmon แต่ทำราคาไม่ได้"],
+["Ning","บริษัท ไอเอสเอฟ ฟู้ด & อินซาฟ","Maintain","Low","P3","Hard","โรงแรม เบเกอรี่ ซื้อตาม traffic"],
+["Ning","บริษัท บาเฮ่าเทียนมี่ กลุ่ม","Maintain","Low","P3","Hard","ร้านเหล้า low season"],
+["Ning","บริษัท ยำ คอนเนคทีฟ","Uplift","Medium","P2","Medium","เพิ่งได้คิงคองเข้ามา ได้ SKU ใหม่"],
+["Ning","บริษัท เซิร์ฟ เวลล์ (OOA)","Unknown","","","","รอไป visit"],
+["Ning","บริษัท บีที ซงฟา & เอฟอาร์","Maintain","Low","P1","Hard","ซื้อไม่ครบ แต่เพิ่มไม่ได้"],
+["Ning","บริษัท ธนบุรี เวลบีอิ้ง","Maintain","Low","P3","Hard","ศูนย์ผู้สูงอายุ ลด cost"],
+["Ning","บริษัท มิตรพันธ์ แอ็สเซ็ท","Maintain","Low","P3","Hard","เหลือแค่ Import Meat"],
+["Ning","Tribe122 Hotel","Maintain","Low","P3","Hard","โรงแรม ทำอะไรเพิ่มไม่ได้"],
+["Ning","บริษัท กอร์เมท์ อินโนเวชัน","Uplift","High","P2","Medium","ผัก ผลไม้ ซื้อน้อยอยู่"],
+["Ning","Lilit Hotel","Maintain","Low","P3","Hard","โรงแรม ทำอะไรเพิ่มไม่ได้"],
+["Ning","บริษัท บิซโบล & ฟู๊ด เอ็กซ์แพนชั่น","Maintain","Low","P3","Hard","ทยอยปิดสาขาไปแล้ว"],
+["Ning","บริษัท กินดื่ม","Uplift","High","P1","Hard","เหลือ Cap เยอะมาก แต่ทำราคาไม่ได้"],
+["Ning","บริษัท แพลนทิฟุล & แพลนท์ แพชชั่น","Uplift","High","P2","Medium","ผัก ผลไม้ ซื้อน้อยอยู่"],
+["Ning","บริษัท ไทเรียว ฟู้ด","Maintain","Medium","P3","Hard","ติดต่อยาก"],
+["Ning","เครือ มั่งมีไทยฟู๊ด","Winback","Medium","P2","Hard","Winback กลุ่ม Seafood"],
+["Ning","บริษัท ทรอพพิคอล ไอแลนด์","Skip","","","","Debt"],
+["Tos","เครือ ไทยเกษม เรสโตรองต์","Winback","Low","P2","Hard","จะได้สาขาใหม่ 3 สาขา"],
+["Tos","เครือ ฮอตพอตแมน กรุ๊ป","Uplift","High","P1","Hard","มี Cap หลาย Cap แต่ติดราคา"],
+["Tos","เครือ เบทาโกร","Maintain","Medium","P1","Hard","ควบคุมการสั่งไม่ได้"],
+["Tos","บริษัท ซาวบ้าน","Uplift","Medium","P2","Hard","ผัก ผลไม้ ยังมีโอกาส"],
+["Tos","Seefah Group","Uplift","High","P2","Medium","ยังมี Cap เพราะซื้อไม่ครบทุกสาขา"],
+["Tos","เครือเคนชิน อิซากายะ","Maintain","Low","P3","Hard","ร้านปิดสาขาไป ซื้อเราครบแล้ว"],
+["Tos","บริษัท แลนด์มาร์ค โฮเต็ล","Winback","High","P2","Hard","เอา SKU กลับมาทดแทน"],
+["Tos","เครือ เรดแพนด้ายากินิกุ","Maintain","Low","P3","Hard","ร้านโตต่อเนื่อง มีร้านใหม่"],
+["Tos","บริษัท เฌอฌิมน์ & วิเสทวิโส","Maintain","Low","P3","Hard","ซื้อเราครบแล้ว ยอดลดลง"],
+["Tos","เครือ โคโค โกลบอล","Maintain","Low","P2","Hard","โรงแรม เน้นซื้อ Liquor DG"],
+["Tos","บริษัท พ็อกเก็ต ร็อกเก็ต","Uplift","Medium","P2","Medium","ผัก ผลไม้ ซื้อตลาด"],
+["Tos","เครือ เสะเมะรุเซะ","Maintain","Low","P3","Medium","ยังไม่เคยเข้าไป visit"],
+["Tos","บริษัท เฮอร์มีส กอล์ฟ คลับ","Uplift","Low","P3","Medium","สนามกอล์ฟ ยังมีกลุ่มสินค้าที่ไม่ซื้อ"],
+["Tos","บริษัท 99 เรียลเอสเตท กลุ่ม","Maintain","Low","P3","Medium","แบ่งซื้อกับ Makro"],
+["Tos","บริษัท ซูกิชิ & เจริญเพิ่มพูน","Winback","Medium","P2","Hard","อยากได้สาขาพัทยากลับมา"],
+["Tos","เครือ ไทยเบฟเวอเรจ","Uplift","Medium","P2","Medium","มี Cap สาขาใหม่ที่ยังไม่สั่ง"],
+["Tos","บริษัท ฟอร์จูน ซิกส์","Maintain","Low","P3","Hard","ซื้อแค่ผักเต็มแล้ว ยอดลดลง"],
+["Tos","เครือ โนเบิล & ฟู๊ดมาสเตอร์","Winback","Medium","P2","Hard","พยายามดันผักเข้าครัวกลาง"],
+["Tos","บริษัท คุ้มสึ","Uplift","Medium","P2","Hard","เหลือ Egg ที่ยังทำไม่ได้"],
+["Tos","บริษัท เจ เจ สยามพัฒนา","Maintain","Low","P3","Hard","โรงแรม ติดต่อยาก"],
+["Tos","บริษัท ทาการะ เอฟ แอนด์ บี","Maintain","Low","P3","Hard","เคยติดหนี้ 2 เดือน"],
+["Tos","บริษัท เอฟบีเบลล์ลี่","Uplift","Medium","P2","Hard","เหลือกลุ่มผักที่พอทำได้"],
+["Tos","บริษัท เดอะเรสเตอร์รองท์ กรุ๊ป","Uplift","High","P1","Hard","มี Opp หน้าสาขาที่ยังได้ไม่ครบ"],
+["Tos","บริษัท ชาโต เดอ แบงคอค","Maintain","Low","P3","Hard","โรงแรม ซื้อตามเทรน"],
+["Tos","บริษัท ธนจิรา โฮม กลุ่ม","Maintain","Low","P3","Hard","ติดต่อยาก"],
+["Tos","บริษัท ซีเลค เซอร์วิส พาร์ทเนอร์","Uplift","High","P2","Medium","เหลือ Cat ให้ทำเพิ่ม กำลังจะได้สุวรรณภูมิ"],
+["Tos","บริษัท ส้มพาสุข","Winback","Medium","P2","Hard","ซื้อยังไม่ครบ Cat แต่ทำราคาไม่ค่อยได้"],
+["Tos","บริษัท เพลิคาน่า (ประเทศไทย)","Winback","High","P3","Hard","จะเอาไก่กลับมา แต่ติดต่อยาก"],
+["Tos","บริษัท โกพิซซ่า","Maintain","Low","P3","Hard","ใช้ SKU ไม่เยอะ"],
+["Tos","Thai Lion Mentari","Maintain","Low","P3","Hard","ยอดไม่นิ่ง ติดเรื่องการทำจ่าย"],
+["Tos","PMW INTERNATIONAL","Maintain","Low","P3","Hard","โรงงาน ควบคุมการสั่งไม่ได้"],
+["Tos","บริษัท เพอร์เฟค สเตป","Maintain","Low","P3","Hard","ต้องลองเข้าไปคุยก่อน"],
+["Kwang","บริษัท เบรคฟาสต์ สตอรี่","Maintain","Low","P1","Hard","เอากลับมาไม่ได้แล้ว ราคาต่ำมาก"],
+["Kwang","เครือ โลวา ฮอสพิแทลลิที","Maintain","Low","P1","Hard","แทบไม่เหลือ Cap แล้ว"],
+["Kwang","เครือ Sarnies Coffee","Uplift","Medium","P1","Medium","Cap เหลือผัก ผลไม้ ร้านกำลังโต"],
+["Kwang","เครือ ยินดีต้อนรับ 65","Maintain","Low","P3","Hard","เต็ม Cap อาจจะได้ร้านเปิดใหม่"],
+["Kwang","เครือ ภิรัชแอนด์บียอนด์เวนเจอร์ส","Uplift","High","P1","Hard","หลายสาขายังไม่ซื้อเรา"],
+["Kwang","เครือ พีพีจี ฮีลส์","Maintain","Low","P1","Hard","เต็ม Cap แล้ว"],
+["Kwang","เครือ สมบัติเติมตระกูล","Maintain","Low","P1","Hard","เต็ม Cap แล้ว"],
+["Kwang","เครือ สุขใจ นำเสนอ","Maintain","Low","P1","Hard","เต็ม Cap แล้ว"],
+["Kwang","บริษัท โนส ที (ประเทศไทย)","Skip","","","","ข้าม"],
+["Kwang","บริษัท โรชาน อินเตอร์เนชั่นแนล","Maintain","Low","P3","Hard","ติดต่อเจ้าของไม่ได้"],
+["Kwang","เครือ บ้านสมถวิลซีเนียร์แคร์","Uplift","","","","ยังติดต่อไม่ได้"],
+["Kwang","บริษัท ดิ เอ็กซ์เซคคิวทิฟ เลาจ์","Maintain","Low","P3","Hard","ติดต่อยาก Prioritize Makro"],
+["Kwang","บริษัท เอกอิ่มทรัพย์ & ปิ่นโต24","Uplift","","","","ยังไม่ได้ติดต่อ"],
+["Kwang","บริษัท ซัมเมอร์ส พิซซ่า กลุ่ม","Maintain","Low","P3","Hard","ร้านทยอยปิด ขายไม่ดี"],
+["Kwang","Salada (Parent)","Maintain","Low","P3","Hard","ซื้อครบทุก Cat แล้ว"],
+["Kwang","บริษัท ชินกู่ คอนเนค","Maintain","Low","P3","Hard","ทยอย churn เพราะเจ้าของดูแลเอง"],
+["Kwang","บริษัท เบรฟแบรนด์ & เบรฟ เบเกอร์","Maintain","Medium","P2","Hard","มี Cap เหลือ แต่ทำราคาไม่ได้"],
+["Kwang","บริษัท เค สตรีท & เดอะ เกรท เรสตอรองส์","Maintain","Low","P3","Hard","เต็ม Cap แล้ว"],
+["Kwang","เครือ ข้าวสารพาเลซ","Uplift","","","","ยังไม่ได้ติดต่อ"],
+["Kwang","บริษัท ทริปเปิ้ล เอ็น คอร์ปอเรชั่น","Maintain","Medium","P2","Hard","Price sensitive"],
+["Kwang","บริษัท ริเวอร์ไว้บ","Uplift","","","","ยังไม่ได้ติดต่อ"],
+["Kwang","SOL and LUNA","Maintain","Low","P3","Hard","ซื้อครบทุก Cat แล้ว"],
+["Kwang","บริษัท มีเดียฟร้อนท์ & สิริพัฒนทรัพย์","Uplift","","","","ยังไม่ได้ติดต่อ"],
+["Kwang","เครือ คั่วพริกเกลือ","Maintain","Low","P3","Hard","ติดต่อเจ้าของไม่ได้เลย"],
+["Kwang","บริษัท เลท มี ที","Maintain","Low","P3","Hard","ยังมี account อื่นอยู่กับ sales"],
+["Kwang","บริษัท บุชเชอร์ แฟคตอรี่","Maintain","Low","P3","Hard","ร้านทยอยปิด"],
+["Kwang","บริษัท ธรรมชาติ ซีฟู้ด รีเทล","Maintain","High","P2","Hard","มี Cap เหลือ แต่ติดใบการันตีคุณภาพ"],
+["Kwang","บริษัท เออแซ่บ & เดอะ กูร์เมต์","Skip","","","","ข้าม"],
+["Mild","บริษัท ฟูด คิทเช่น & เอพีที ฟู๊ดส์","Winback","High","P1","Hard","ผลไม้ seasonal 3 ตัว Churn ไป มี Opp เปิดร้านใหม่"],
+["Mild","บริษัท พาวิน เมคเกอร์ ฟู้ด","Uplift","High","P1","Hard","ถ้าได้โรงเรียนรอบตี 4 เพิ่ม Volume ผักโตเยอะมาก"],
+["Mild","เครือ เด็ดกะเพรา","Uplift","Medium","P2","Medium","เหลือ Household กับ Basic Food"],
+["Mild","เครือ ไซมิส เทสท์","Uplift","High","P1","Medium","เหลือ vol ครัวกลางที่ยังไม่ได้"],
+["Mild","บริษัท เปเปอร์เพลน & ทาโฮน่า","Uplift","Medium","P1","Easy","Beverage ซื้อน้อยอยู่ และ line menu ใหม่ๆ"],
+["Mild","บริษัท อัคร ฮอสพิแทลลิตี้ กลุ่ม","Unknown","","","","ยังไม่ได้ติดต่อ"],
+["Mild","บริษัท รีลิเกอร์ โฮลดิ้ง","Unknown","","","","ยังไม่ได้ติดต่อ"],
+["Mild","บริษัท เดอะ ช็อคโกแลต แฟคทอรี่","Winback","Medium","P2","Hard","มี Opp ที่จะได้หน้าสาขากลับมา"],
+["Mild","เครือ มีทลิเชียส","Winback","Medium","P2","Hard","ผักหายไปเพราะ Quality ไป churn ตลาดไท"],
+["Mild","บริษัท ไวน์คอนเน็คชั่น & เดสติโน","Maintain","Low","P2","Hard","เต็ม Cap ของสดไม่ซื้อ เซ็นสัญญา Makro"],
+["Mild","บริษัท ทีเจ เฟเวอร์ กรุ๊ป","Debt","","","",""],
+["Mild","บริษัท พีซ โอเรียนทัล ทีเฮ้าส์","Maintain","Low","P2","Hard","SKU ที่ยังไม่ได้ ชนซัพตรงหมด"],
+["Mild","Pattaya Marriott Resort Spa","Maintain","Low","P2","Hard","โรงแรมซื้อเต็ม Cap แล้ว"],
+["Mild","บริษัท บางกอกคลับ","Uplift","Medium","P1","Hard","มีโอกาสทำโปรเจคแบบพาวิน"],
+["Mild","บริษัท ดิ เออเบิ้ลเอสเคป & เออร์แบน เฮาส์","Maintain","Low","P3","Hard","ซื้อเต็มแล้ว ราคาทำไม่ค่อยได้"],
+["Mild","บริษัท โอเอสบี เฮ้าส์","Winback","Low","P1","Medium","ตอนนี้เหลือไข่อย่างเดียว"],
+["Mild","บริษัท คิทเช่นเมท & พราลีน ฟู้ด","Winback","Medium","P3","Medium","ตอนนี้เหลือ Cooking"],
+["Mild","โรงแรมซินนามอน เรสซิเดนซ์","Maintain","","","",""],
+["Mild","เครือ ห้างเซ็นทรัล กลุ่ม","Maintain","","","",""],
+["Mild","บริษัท บลูโกลด์ คอฟฟี่","Maintain","","","",""],
+["Mild","บริษัท ออเดรย์ กรุ๊ป & เจพี แฟมิลี่ คาเฟ่","Debt","","","",""],
+["Mild","บริษัท อาร์เอสเอส แพชชั่น","Winback","","","","อกไก่"],
+["Mild","Rakkankin","Uplift","High","P1","Hard","ตอนนี้ซื้อแค่ผัก Meat ยังไม่ซื้อ คิดว่าไปเพิ่มได้"],
+["Nitcha","บริษัท คอมพานี บี จำกัด","Unknown","","","",""],
+["Nitcha","บริษัท ชาคาริคิ 432 05 จำกัด & บริษัท ชาคาริคิ 432 จำกัด","Unknown","","","",""],
+["Nitcha","บริษัท บางกอก เรสเตอรอง กรุ๊ป จำกัด & บริษัท สยามนู้ดเดิ้ลอินเตอร์กรุ๊ป จำกัด & บริษัท อธีน่า โฮลดิ้ง จำกัด","Unknown","","","",""],
+["Nitcha","บริษัท เมเจอร์ โบว์ล กรุ้ป จำกัด","Unknown","","","",""],
+["Nitcha","บริษัท อิ่มทรัพย์ โกลบอล คูซีน จำกัด & บริษัท อิ่มสหาย คูซีน จำกัด","Unknown","","","",""],
+["Nitcha","บริษัท บาร์เทลส จำกัด","Unknown","","","",""],
+["Nitcha","เครือ บริษัท บางกอก ไซเซ ซากาบะ จำกัด","Unknown","","","",""],
+["Nitcha","บริษัท เอบีพี คาเฟ (ประเทศไทย) จำกัด & บริษัท เกรฮาวด์ คาเฟ่ จำกัด & บริษัท โกลเด้น โดนัท (ประเทศไทย) จำกัด","Unknown","","","",""],
+["Nitcha","บริษัท เดย์โทน่า เรสเตอรองต์ กรุ๊ป จำกัด","Unknown","","","",""],
+["Nitcha","บริษัท พี ที อิมเป็กซ์ จำกัด (สำนักงานใหญ่) & บริษัท แอ็บบา อินฟินิตี้ จำกัด (สำนักงานใหญ่) & บริษัท เอส วาย บี เอ็ม เอ็นจิเนียริ่ง จำกัด","Unknown","","","",""],
+["Nitcha","บริษัท แอลเซเว่น เบฟเวอเรจ แอนด์ ฟู้ด จำกัด","Unknown","","","",""],
+["Nitcha","บริษัท ฟู้ด ออนเนอร์ จำกัด","Unknown","","","",""],
+["Nitcha","บริษัท ดิ เอราวัณ กรุ๊ป จำกัด","Unknown","","","",""],
+["Nitcha","บริษัท เจเอเอส แอสเซ็ท จำกัด","Unknown","","","",""],
+["Nitcha","บริษัท ครัวอัปษร จำกัด","Unknown","","","",""],
+["Nitcha","บริษัท ไวทัลลิตี้ ไทย อ๊อปโค จำกัด","Unknown","","","",""],
+["Nitcha","บริษัท อรุโณเทล จำกัด & บริษัท ศาลาอรุณ จำกัด & บริษัท วีแกน คอมมูนิตี้ จำกัด","Unknown","","","",""],
+["Nitcha","บริษัท ซีทูเอช จำกัด","Unknown","","","",""],
+["Nitcha","khaogroup","Unknown","","","",""],
+["Nitcha","บริษัท แอล เอ็น จี ฟู๊ด โปรดักส์  จำกัด","Unknown","","","",""],
+["Nitcha","บริษัท โวค อินเตอร์เนชั่นแนล จำกัด","Unknown","","","",""],
+["Nitcha","บริษัท เอ็ม เทล แมเนจเม้นท์ จำกัด","Unknown","","","",""],
+["Nitcha","เครือ หงเปา อีวี","Unknown","","","",""],
+["Nitcha","บริษัท หมอชิตแลนด์ จำกัด","Unknown","","","",""],
+["Nitcha","บริษัท มหาทรัพย์ ดีเวลลอปเม้นท์ จำกัด","Unknown","","","",""],
+["Nitcha","บริษัท วัน ออริจิ้น ฮอสพิทัลลิตี้ จำกัด","Unknown","","","",""],
+["Nitcha","บริษัท เดอะ เฟรช ฟู้ด จำกัด & บริษัท เฟรช ฟู้ด ฮอสพิแทลลิตี้ จำกัด","Unknown","","","",""],
+["Nitcha","บริษัท ฟู้ด ไลบรารี่ จำกัด","Unknown","","","",""],
+["Nitcha","เครือ บริษัท ชูก้าเรย์แบงค็อก จำกัด","Unknown","","","",""],
+["Nitcha","กะเพราช้างเผือกโภชนา - คุณปรเมศวร์ (Parent)","Unknown","","","",""],
+["Nitcha","บริษัท เดอะ เพรสทีจ ฮอซพิทาลิตี้ จํากัด","Unknown","","","",""],
+["Nitcha","บริษัท อาหารปิ่นโต จำกัด","Unknown","","","",""],
+["Nitcha","บริษัท ปลูกผักเพราะรักแม่ จํากัด","Unknown","","","",""],
+];
+
+const SUPABASE_URL='https://dntggtczirptdkdtmfpw.supabase.co';
+const SUPABASE_KEY='sb_publishable_IWqwBJKVjiApC0Ujs4GQYw_TtMXB24s';
+
+async function sbGet(t,f=''){const r=await fetch(`${SUPABASE_URL}/rest/v1/${t}?${f}`,{headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,'Content-Type':'application/json'}});if(!r.ok)throw new Error(await r.text());return r.json();}
+async function sbUpsert(t,row){const r=await fetch(`${SUPABASE_URL}/rest/v1/${t}`,{method:'POST',headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(row)});if(!r.ok)throw new Error(await r.text());}
+async function sbDelete(t,id){const r=await fetch(`${SUPABASE_URL}/rest/v1/${t}?id=eq.${encodeURIComponent(id)}`,{method:'DELETE',headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`}});if(!r.ok)throw new Error(await r.text());}
+function showLoader(msg='กำลังโหลด...'){let el=document.getElementById('sb-loader');if(!el){el=document.createElement('div');el.id='sb-loader';el.style.cssText='position:fixed;inset:0;background:rgba(255,255,255,.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;font-family:Figtree,sans-serif;gap:10px;';el.innerHTML='<div style="width:32px;height:32px;border:3px solid #e0e3e9;border-top-color:#0073ea;border-radius:50%;animation:spin .7s linear infinite;"></div><div style="font-size:14px;color:#676879;" id="sb-loader-msg"></div><style>@keyframes spin{to{transform:rotate(360deg)}}</style>';document.body.appendChild(el);}document.getElementById('sb-loader-msg').textContent=msg;el.style.display='flex';}
+function hideLoader(){const el=document.getElementById('sb-loader');if(el)el.style.display='none';}
+function showSyncing(){setSyncBadge('⏳ กำลัง sync...','#f59e0b');}
+function showSynced(){setSyncBadge('✅ Synced','#00854d');setTimeout(()=>setSyncBadge('',''),2500);}
+function showSyncErr(){setSyncBadge('❌ Sync error','#e44258');}
+function setSyncBadge(txt,color){const el=document.getElementById('sync-badge');if(!el)return;el.textContent=txt;el.style.color=color;}
+
+let weeks=[],activeWeekId='',weekDataCache={},dataOverrides={};
+
+async function loadAll(){
+  showLoader('กำลังโหลดข้อมูลจากเซิร์ฟเวอร์...');
+  try{
+    const wRows=await sbGet('fk_weeks','order=created_at.desc');
+    weeks=wRows.map(r=>({id:r.id,name:r.name}));
+    if(weeks.length===0){const id='w-'+Date.now();await sbUpsert('fk_weeks',{id,name:'Week 18 (28 เม.ย. – 4 พ.ค. 2026)'});weeks=[{id,name:'Week 18 (28 เม.ย. – 4 พ.ค. 2026)'}];}
+    const dRows=await sbGet('fk_week_data','');
+    weekDataCache={};
+    dRows.forEach(r=>{if(!weekDataCache[r.week_id])weekDataCache[r.week_id]={};weekDataCache[r.week_id][r.row_key]={update:r.upd||'',sku:r.sku||'',progress:r.progress||''};});
+    const oRows=await sbGet('fk_overrides','');
+    dataOverrides={};
+    oRows.forEach(r=>{dataOverrides[r.row_key]=r.fields;});
+    try{const aiRows=await sbGet('fk_action_items','order=created_at.asc');actionItemsCache={};aiRows.forEach(r=>{if(!actionItemsCache[r.row_key])actionItemsCache[r.row_key]=[];actionItemsCache[r.row_key].push(r);});}catch(e){actionItemsCache={};console.warn('fk_action_items not ready:',e.message);}
+    try{const ocRows=await sbGet('fk_opty_cards','order=created_at.asc');optyCardsCache={};ocRows.forEach(r=>{if(!optyCardsCache[r.row_key])optyCardsCache[r.row_key]=[];optyCardsCache[r.row_key].push(r);});}catch(e){optyCardsCache={};console.warn('fk_opty_cards not ready:',e.message);}
+    activeWeekId=localStorage.getItem('fk_active_week')||weeks[0].id;
+    if(!weeks.find(w=>w.id===activeWeekId))activeWeekId=weeks[0].id;
+    hideLoader();
+  }catch(e){hideLoader();document.body.innerHTML=`<div style="padding:40px;text-align:center;font-family:sans-serif;"><h2 style="color:#e44258;">⚠️ ไม่สามารถเชื่อมต่อ Supabase ได้</h2><p style="color:#676879;margin-top:8px;">กรุณาตรวจสอบ SUPABASE_URL และ SUPABASE_KEY</p><pre style="background:#f4f5f7;padding:12px;border-radius:6px;margin-top:12px;font-size:12px;text-align:left;">${e.message}</pre></div>`;}
+}
+function weekData(wid){return weekDataCache[wid||activeWeekId]||{};}
+async function saveWeekData(wid,rowK,fields){
+  if(!weekDataCache[wid])weekDataCache[wid]={};
+  weekDataCache[wid][rowK]={...(weekDataCache[wid][rowK]||{}),...fields};
+  showSyncing();
+  try{await sbUpsert('fk_week_data',{week_id:wid,row_key:rowK,upd:weekDataCache[wid][rowK].update||'',sku:weekDataCache[wid][rowK].sku||'',progress:weekDataCache[wid][rowK].progress||''});showSynced();}
+  catch(e){showSyncErr();console.error(e);}
+}
+async function addWeekToDB(id,name){showSyncing();try{await sbUpsert('fk_weeks',{id,name});showSynced();}catch(e){showSyncErr();throw e;}}
+async function deleteWeekFromDB(id){
+  showSyncing();
+  try{await sbDelete('fk_weeks',id);await fetch(`${SUPABASE_URL}/rest/v1/fk_week_data?week_id=eq.${encodeURIComponent(id)}`,{method:'DELETE',headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`}});showSynced();}
+  catch(e){showSyncErr();throw e;}
+}
+async function saveOverrides(){
+  showSyncing();
+  try{const rows=Object.entries(dataOverrides).map(([k,v])=>({row_key:k,fields:v}));if(rows.length){await fetch(`${SUPABASE_URL}/rest/v1/fk_overrides`,{method:'POST',headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(rows)});}showSynced();}
+  catch(e){showSyncErr();}
+}
+function getField(r,idx){const k=rowKey(r);return(dataOverrides[k]&&dataOverrides[k][idx]!==undefined)?dataOverrides[k][idx]:r[idx];}
+function setField(k,idx,val){if(!dataOverrides[k])dataOverrides[k]={};dataOverrides[k][idx]=val;saveOverrides();}
+function rowKey(r){return r[0]+'||'+r[1];}
+
+setInterval(async()=>{
+  try{const dRows=await sbGet('fk_week_data','');weekDataCache={};dRows.forEach(r=>{if(!weekDataCache[r.week_id])weekDataCache[r.week_id]={};weekDataCache[r.week_id][r.row_key]={update:r.upd||'',sku:r.sku||'',progress:r.progress||''};});render();if(document.getElementById('tab-history')?.classList.contains('active'))renderHistory();}
+  catch(e){}
+},30000);
+
+const STATUS_TAG={Maintain:'t-maintain',Uplift:'t-uplift',Winback:'t-winback',Unknown:'t-unknown',Skip:'t-skip',Debt:'t-debt'};
+const PROG_OPTS=['','ยังไม่เริ่ม','กำลังดำเนินการ','รอผล','ได้แล้ว','ไม่ได้'];
+const PROG_COLOR={'':'#c5c7d4','ยังไม่เริ่ม':'#c5c7d4','กำลังดำเนินการ':'#0073ea','รอผล':'#d4831a','ได้แล้ว':'#00854d','ไม่ได้':'#e44258'};
+const STAFF_ORDER=['Dent','BB','Ning','Tos','Kwang','Mild','Nitcha'];
+const GROUP_COLORS={Dent:'#0073ea',BB:'#9f5cf6',Ning:'#00854d',Tos:'#d4831a',Kwang:'#e44258',Mild:'#5cb85c',Nitcha:'#0891b2'};
+let staffFilter='all',sortKey='',sortDir=1,page=1,perPage=999;
+let collapsed={},editMode=false;
+let hvStaffFilter='all',hvSelectedWeeks=new Set();
+
+function toggleEditMode(){
+  editMode=!editMode;
+  const btn=document.getElementById('edit-mode-btn');const lbl=document.getElementById('edit-mode-label');
+  if(btn){btn.style.background=editMode?'#fff3e0':'';btn.style.borderColor=editMode?'#ffb74d':'';btn.style.color=editMode?'#e65100':'';}
+  if(lbl){lbl.textContent=editMode?'กำลังแก้ไข ✓':'แก้ไขข้อมูล';}
+  render();
+}
+function diffHtml(d){if(!d)return'<span style="color:#c5c7d4">—</span>';const cls=d==='Hard'?'diff-hard':d==='Easy'?'diff-easy':'diff-med';const n=d==='Hard'?3:d==='Easy'?1:2;const bars=[1,2,3].map(i=>`<div class="diff-bar${i>n?' off':''}"></div>`).join('');return`<div class="diff-wrap ${cls}">${bars}<span class="diff-lbl">${d}</span></div>`;}
+function oppHtml(o){if(!o)return'<span style="color:#c5c7d4">—</span>';const cls=o==='High'?'opp-high':o==='Low'?'opp-low':'opp-med';return`<div class="opp-wrap ${cls}"><div class="opp-circle"></div><span class="opp-lbl">${o}</span></div>`;}
+function filtered(){
+  let d=[...DATA];
+  const s=(document.getElementById('srch')||{}).value||'';
+  const st=(document.getElementById('sel-status')||{}).value||'';
+  const pr=(document.getElementById('sel-pri')||{}).value||'';
+  const op=(document.getElementById('sel-opp')||{}).value||'';
+  const pg=(document.getElementById('sel-prog')||{}).value||'';
+  if(staffFilter!=='all')d=d.filter(r=>r[0]===staffFilter);
+  if(st)d=d.filter(r=>getField(r,2)===st);
+  if(pr)d=d.filter(r=>getField(r,4)===pr);
+  if(op)d=d.filter(r=>getField(r,3)===op);
+  if(s){const q=s.toLowerCase();d=d.filter(r=>r[1].toLowerCase().includes(q)||r[0].toLowerCase().includes(q));}
+  if(pg){const wd=weekData();d=d.filter(r=>(wd[rowKey(r)]||{}).progress===pg);}
+  const momF=(document.getElementById('sel-mom')||{}).value||'';
+  if(momF==='increase')d=d.filter(r=>{const m=getGMVMoM(r[1]);return m!==null&&m>=0;});
+  if(momF==='decrease')d=d.filter(r=>{const m=getGMVMoM(r[1]);return m!==null&&m<0;});
+  if(momF==='nodata')d=d.filter(r=>getGMVMoM(r[1])===null);
+  const oOrd={High:3,Medium:2,Low:1,'':0};
+  if(sortKey==='account')d.sort((a,b)=>a[1].localeCompare(b[1],'th')*sortDir);
+  if(sortKey==='status')d.sort((a,b)=>getField(a,2).localeCompare(getField(b,2))*sortDir);
+  if(sortKey==='opp')d.sort((a,b)=>(oOrd[getField(b,3)]-oOrd[getField(a,3)])*sortDir);
+  if(sortKey==='mom')d.sort((a,b)=>{const ma=getGMVMoM(a[1])??-9999;const mb=getGMVMoM(b[1])??-9999;return(mb-ma)*sortDir;});
+  return d;
+}
+function setStaff(s){
+  staffFilter=s;
+  document.querySelectorAll('#tracker-wrap .chip').forEach(c=>c.classList.remove('on'));
+  const el=document.getElementById('fc-'+s);if(el)el.classList.add('on');
+  page=1;render();
+}
+function sortBy(k){if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=1;}render();}
+function pg(d){const total=Math.ceil(filtered().length/perPage);page=Math.max(1,Math.min(page+d,total));render();}
+
+function render(){
+  const wd=weekData();const data=filtered();const groups={};
+  STAFF_ORDER.forEach(s=>{groups[s]=[];});
+  data.forEach(r=>{if(groups[r[0]])groups[r[0]].push(r);});
+  const tot=data.length;
+  document.getElementById('ss-total').textContent=tot;
+  document.getElementById('ss-uplift').textContent=data.filter(r=>getField(r,2)==='Uplift').length;
+  document.getElementById('ss-maintain').textContent=data.filter(r=>getField(r,2)==='Maintain').length;
+  document.getElementById('ss-winback').textContent=data.filter(r=>getField(r,2)==='Winback').length;
+  document.getElementById('ss-skip').textContent=data.filter(r=>getField(r,2)==='Skip'||getField(r,2)==='Debt').length;
+  document.getElementById('ws-uplift').textContent=data.filter(r=>getField(r,2)==='Uplift').length;
+  document.getElementById('ws-maintain').textContent=data.filter(r=>getField(r,2)==='Maintain').length;
+  document.getElementById('ws-winback').textContent=data.filter(r=>getField(r,2)==='Winback').length;
+  document.getElementById('ws-skip').textContent=data.filter(r=>getField(r,2)==='Skip'||getField(r,2)==='Debt').length;
+  const updCount=data.filter(r=>(wd[rowKey(r)]||{}).update).length;
+  document.getElementById('ws-updated').textContent=updCount;
+  document.getElementById('rc').textContent=`${tot} items`;
+  let html='';
+  STAFF_ORDER.forEach(staff=>{
+    const rows=groups[staff];if(!rows||rows.length===0)return;
+    const col=GROUP_COLORS[staff]||'#676879';const isOpen=!collapsed[staff];
+    const uplift=rows.filter(r=>getField(r,2)==='Uplift').length;
+    const winback=rows.filter(r=>getField(r,2)==='Winback').length;
+    const updated=rows.filter(r=>(wd[rowKey(r)]||{}).update).length;
+    html+=`<div class="group-header" onclick="toggleGroup('${staff}')">
+      <span style="font-size:11px;color:#676879;display:inline-block;transform:${isOpen?'rotate(0)':'rotate(-90deg)'}">▼</span>
+      <div class="group-dot" style="background:${col}"></div>
+      <span class="group-name">${staff}</span>
+      <span class="group-pill">${rows.length} accounts</span>
+      <div class="group-sum">
+        <span class="gsum-item">Uplift <span style="color:#00854d">${uplift}</span></span>
+        <span class="gsum-item">Winback <span style="color:#d4831a">${winback}</span></span>
+        <span class="gsum-item">อัพเดทแล้ว <span style="color:#0073ea">${updated}</span></span>
+      </div>
+    </div>`;
+    if(isOpen){
+      rows.forEach(r=>{
+        const k=rowKey(r);const rd=wd[k]||{};
+        const stVal=getField(r,2),oppVal=getField(r,3),priVal=getField(r,4),diffVal=getField(r,5);
+        const stClass=STATUS_TAG[stVal]||'t-unknown';const priClass=priVal?'pri-'+priVal.toLowerCase():'';
+        const upd=rd.update||'';const sku=rd.sku||'';const prog=rd.progress||'';
+        const progBase=prog.split('|')[0];const progReason=prog.split('|')[1]||'';
+        const pdot=PROG_COLOR[progBase]||'#c5c7d4';
+        const progOpts=PROG_OPTS.map(o=>'<option value="'+o+'"'+(progBase===o?' selected':'')+'>'+( o||'เลือก...')+'</option>').join('');
+        const progReasonBadge=progReason?'<span style="font-size:9px;background:#ffebee;color:#c62828;border-radius:3px;padding:1px 5px;margin-left:3px;font-weight:600;">'+progReason+'</span>':'';
+        const stCell=(stVal?'<span class="tag '+stClass+'">'+stVal+'</span>':'')+buildAIBadge(k);
+        const oppCell=editMode?'<select class="cell-editable" onchange="setField(\''+k+'\',3,this.value);render()">'+['','High','Medium','Low'].map(v=>'<option value="'+v+'"'+(oppVal===v?' selected':'')+'>'+(v||'—')+'</option>').join('')+'</select>':oppHtml(oppVal);
+        const priCell=editMode?'<select class="cell-editable" onchange="setField(\''+k+'\',4,this.value);render()">'+['','P1','P2','P3'].map(v=>'<option value="'+v+'"'+(priVal===v?' selected':'')+'>'+(v||'—')+'</option>').join('')+'</select>':priVal?'<span class="pri '+priClass+'">'+priVal+'</span>':'';
+        const diffCell=editMode?'<select class="cell-editable" onchange="setField(\''+k+'\',5,this.value);render()">'+['','Easy','Medium','Hard'].map(v=>'<option value="'+v+'"'+(diffVal===v?' selected':'')+'>'+(v||'—')+'</option>').join('')+'</select>':diffHtml(diffVal);
+        html+=`<div class="row${editMode?' edit-row':''}">
+          <div class="cell cell-chk-freeze"><input type="checkbox" /></div>
+          <div class="cell cell-acct-freeze"><div class="acct-name">${r[1]}${buildOptyFlag(k)}</div>${r[6]?'<div class="acct-note">'+r[6]+'</div>':''}</div>
+          <div class="cell w-status" style="flex-direction:column;align-items:flex-start;justify-content:center;padding:6px 10px;">${stCell}</div>
+          <div class="cell w-opp${editMode?' cell-editable':''}">${oppCell}</div>
+          <div class="cell w-pri${editMode?' cell-editable':''}" style="${editMode?'justify-content:flex-start;':''}">${priCell}</div>
+          <div class="cell w-diff${editMode?' cell-editable':''}">${diffCell}</div>
+          <div class="cell w-note" style="${editMode?'padding:4px 8px;':''}">
+            ${editMode
+              ?`<textarea style="width:100%;border:1px solid #ffb74d;background:#fffbf0;font-size:12px;color:#1d2026;font-family:'Figtree',sans-serif;resize:none;line-height:1.5;padding:5px;border-radius:4px;min-height:52px;" data-k="${k}" onblur="setField(this.dataset.k,6,this.value);render()">${getField(r,6)||''}</textarea>`
+              :`<span style="font-size:12px;color:#676879;line-height:1.5">${getField(r,6)||'—'}</span>`
+            }
+          </div>
+          <div class="cell w-prog" style="padding:0 8px;"><div class="prog-wrap"><div class="prog-dot" style="background:${pdot}" data-pi="${k}"></div><select class="prog-sel" data-k="${k}" onchange="saveProg(this)">${progOpts}</select>${progReasonBadge}</div></div>
+          <div class="cell cell-upd"><textarea rows="2" placeholder="อัพเดทสัปดาห์นี้..." class="${upd?'has-update':''}" data-k="${k}" data-field="update" oninput="debounceSave(this,'update')" onblur="saveCellData(this,'update')">${upd}</textarea></div>
+          <div class="cell w-mom" style="justify-content:center;">${momBadge(getGMVMoM(r[1]))}</div>
+        </div>`;
+      });
+      html+=`<div class="add-row">+ Add ${staff} account</div>`;
+    }
+  });
+  document.getElementById('grid-body').innerHTML=html;
+  document.getElementById('footer-stat').textContent=`${tot} accounts`;
+  document.getElementById('pp').disabled=page<=1;
+  document.getElementById('np').disabled=page>=Math.ceil(tot/perPage);
+  document.getElementById('pi').textContent=`หน้า ${page}`;
+}
+
+function toggleGroup(s){collapsed[s]=!collapsed[s];render();}
+function saveCellData(el,field){const k=el.dataset.k;const wd=weekData();const current=wd[k]||{};const updated={...current,[field]:el.value};if(field==='update')el.classList.toggle('has-update',!!el.value);if(field==='sku')el.classList.toggle('has-sku',!!el.value);saveWeekData(activeWeekId,k,updated);updateWeekStats();}
+function saveProg(sel){
+  const k=sel.dataset.k;
+  if(sel.value==='ไม่ได้'){
+    openPRModal(k, sel);
+    return;
+  }
+  const wd=weekData();const current=wd[k]||{};
+  saveWeekData(activeWeekId,k,{...current,progress:sel.value});
+  const dot=document.querySelector(`[data-pi="${k}"]`);
+  if(dot)dot.style.background=PROG_COLOR[sel.value]||'#c5c7d4';
+  updateWeekStats();
+}
+function updateWeekStats(){const wd=weekData();document.getElementById('ws-updated').textContent=DATA.filter(r=>(wd[rowKey(r)]||{}).update).length;}
+
+function renderWeekSelect(){
+  const sel=document.getElementById('active-week-sel');sel.innerHTML='<option value="">— เลือกสัปดาห์ —</option>';
+  weeks.forEach(w=>{const opt=document.createElement('option');opt.value=w.id;opt.textContent=w.name;if(w.id===activeWeekId)opt.selected=true;sel.appendChild(opt);});
+  const active=weeks.find(w=>w.id===activeWeekId);document.getElementById('week-badge').textContent=active?active.name:'—';
+}
+function renderWeekListUI(){
+  const el=document.getElementById('week-list-ui');if(!el)return;
+  if(weeks.length===0){el.innerHTML='<div style="padding:14px;text-align:center;color:#676879;font-size:13px;">ยังไม่มีสัปดาห์ กรุณาสร้างใหม่</div>';return;}
+  el.innerHTML=weeks.map(w=>`
+    <div class="week-list-item ${w.id===activeWeekId?'active':''}" id="wli-${w.id}">
+      <span id="wli-name-${w.id}" style="cursor:pointer;flex:1;" onclick="switchWeek('${w.id}');renderWeekListUI();">${w.name}</span>
+      <span id="wli-rename-${w.id}" style="display:none;flex:1;align-items:center;gap:5px;">
+        <input id="wli-inp-${w.id}" type="text" value="${w.name.replace(/"/g,'&quot;')}" style="flex:1;font-size:13px;padding:3px 7px;border:1px solid #0073ea;border-radius:5px;font-family:'Figtree',sans-serif;" onkeydown="if(event.key==='Enter')saveRename('${w.id}');if(event.key==='Escape')cancelRename('${w.id}');" />
+        <button onclick="saveRename('${w.id}')" style="font-size:11px;padding:2px 8px;background:#0073ea;color:#fff;border:none;border-radius:4px;cursor:pointer;">บันทึก</button>
+        <button onclick="cancelRename('${w.id}')" style="font-size:11px;padding:2px 8px;background:#f4f5f7;color:#676879;border:1px solid #e0e3e9;border-radius:4px;cursor:pointer;">ยกเลิก</button>
+      </span>
+      <span id="wli-actions-${w.id}" style="display:flex;align-items:center;gap:4px;">
+        <span onclick="startRename('${w.id}')" style="font-size:12px;color:#0073ea;cursor:pointer;padding:2px 6px;border-radius:4px;">✏️</span>
+        <span class="wdel" onclick="askDelete('${w.id}')" style="display:${weeks.length>1?'inline':'none'}">ลบ</span>
+      </span>
+      <span id="wdc-${w.id}" style="display:none;align-items:center;gap:5px;">
+        <span style="font-size:12px;color:#676879;">ยืนยันลบ?</span>
+        <button onclick="doDeleteWeek('${w.id}')" style="font-size:11px;padding:2px 8px;background:#e44258;color:#fff;border:none;border-radius:4px;cursor:pointer;">ลบเลย</button>
+        <button onclick="cancelDelete('${w.id}')" style="font-size:11px;padding:2px 8px;background:#f4f5f7;color:#676879;border:1px solid #e0e3e9;border-radius:4px;cursor:pointer;">ยกเลิก</button>
+      </span>
+    </div>`).join('');
+}
+function startRename(id){document.getElementById('wli-name-'+id).style.display='none';document.getElementById('wli-actions-'+id).style.display='none';const w=document.getElementById('wli-rename-'+id);w.style.display='flex';const inp=document.getElementById('wli-inp-'+id);if(inp){inp.focus();inp.select();}}
+function cancelRename(id){renderWeekListUI();}
+async function saveRename(id){
+  const inp=document.getElementById('wli-inp-'+id);const newName=(inp?inp.value:'').trim();if(!newName)return;
+  const w=weeks.find(x=>x.id===id);if(!w)return;w.name=newName;showSyncing();
+  try{await fetch(`${SUPABASE_URL}/rest/v1/fk_weeks?id=eq.${encodeURIComponent(id)}`,{method:'PATCH',headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({name:newName})});showSynced();}
+  catch(e){showSyncErr();}
+  renderWeekListUI();renderWeekSelect();
+  const badge=document.getElementById('week-badge');if(badge&&activeWeekId===id)badge.textContent=newName;
+  renderWeekPicker();
+}
+function askDelete(id){document.getElementById('wdc-'+id).style.display='flex';document.getElementById('wli-actions-'+id).style.display='none';}
+function cancelDelete(id){renderWeekListUI();}
+function doDeleteWeek(id){
+  if(weeks.length<=1){alert('ต้องมีอย่างน้อย 1 สัปดาห์');return;}
+  deleteWeekFromDB(id).then(()=>{delete weekDataCache[id];weeks=weeks.filter(x=>x.id!==id);hvSelectedWeeks.delete(id);if(activeWeekId===id)activeWeekId=weeks[0]?weeks[0].id:'';localStorage.setItem('fk_active_week',activeWeekId);renderWeekSelect();renderWeekListUI();renderWeekPicker();render();}).catch(e=>alert('ลบสัปดาห์ไม่ได้: '+e.message));
+}
+function switchWeek(id){if(!id)return;activeWeekId=id;localStorage.setItem('fk_active_week',id);renderWeekSelect();render();}
+function addWeek(){
+  const inp=document.getElementById('new-week-name');const name=inp.value.trim();if(!name)return;
+  const id='w-'+Date.now();
+  addWeekToDB(id,name).then(()=>{weeks.unshift({id,name});hvSelectedWeeks.add(id);activeWeekId=id;localStorage.setItem('fk_active_week',id);inp.value='';renderWeekSelect();renderWeekListUI();renderWeekPicker();render();}).catch(e=>alert('เพิ่มสัปดาห์ไม่ได้: '+e.message));
+}
+function openWeekModal(){renderWeekListUI();document.getElementById('week-modal').style.display='flex';}
+function closeWeekModal(){document.getElementById('week-modal').style.display='none';}
+function closeWeekModalBg(e){if(e.target.id==='week-modal')closeWeekModal();}
+function exportCSV(){
+  const wd=weekData();const active=weeks.find(w=>w.id===activeWeekId);const weekName=active?active.name:'unknown';
+  const headers=['Staff','Account','Status','Opportunity','Priority','Difficulty','Action Plan','SKU Target','Progress','Weekly Update'];
+  const rows=DATA.map(r=>{const k=rowKey(r);const rd=wd[k]||{};return[...r.slice(0,7),rd.sku||'',rd.progress||'',rd.update||''];});
+  const csv=[headers,...rows].map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`Freshket_KAM_${weekName.replace(/[^a-zA-Z0-9ก-๙]/g,'_')}.csv`;a.click();
+}
+
+function switchTab(tab){
+  ['tracker','history','gmv'].forEach(t=>{document.getElementById('tab-'+t).classList.toggle('active',tab===t);});
+  document.getElementById('tracker-wrap').classList.toggle('hidden',tab!=='tracker');
+  document.getElementById('hv-wrap').classList.toggle('show',tab==='history');
+  document.getElementById('gmv-wrap').classList.toggle('show',tab==='gmv');
+  if(tab==='history'){renderWeekPicker();renderHistory();}
+  if(tab==='gmv'){setTimeout(()=>{renderGMV();document.getElementById('gmv-data-source').textContent='📊 ข้อมูล Embedded (Q2 2026)';},50);}
+}
+
+function hvSetStaff(s){
+  hvStaffFilter=s;
+  document.querySelectorAll('#hv-wrap .chip').forEach(c=>c.classList.remove('on'));
+  const el=document.getElementById('hfc-'+s);if(el)el.classList.add('on');
+  renderHistory();
+}
+function hvSelectAll(){weeks.forEach(w=>hvSelectedWeeks.add(w.id));renderWeekPicker();renderHistory();}
+function hvClearAll(){hvSelectedWeeks.clear();renderWeekPicker();renderHistory();}
+function hvToggleWeek(id){if(hvSelectedWeeks.has(id))hvSelectedWeeks.delete(id);else hvSelectedWeeks.add(id);renderWeekPicker();renderHistory();}
+function renderWeekPicker(){
+  if(hvSelectedWeeks.size===0&&weeks.length>0)weeks.forEach(w=>hvSelectedWeeks.add(w.id));
+  const container=document.getElementById('wp-weeks');if(!container)return;
+  if(!weeks.length){container.innerHTML='<span style="font-size:12px;color:#c5c7d4;font-style:italic;">ยังไม่มีสัปดาห์ที่สร้าง</span>';return;}
+  container.innerHTML=weeks.map(w=>`<span class="wp-chip${hvSelectedWeeks.has(w.id)?' sel':''}" onclick="hvToggleWeek('${w.id}')">${w.id===activeWeekId?'● ':''} ${w.name}</span>`).join('');
+}
+const PROG_BADGE_CLASS={'ยังไม่เริ่ม':'pp-none','กำลังดำเนินการ':'pp-doing','รอผล':'pp-wait','ได้แล้ว':'pp-done','ไม่ได้':'pp-fail'};
+const PROG_DOT_COLOR_HV={'ยังไม่เริ่ม':'#c5c7d4','กำลังดำเนินการ':'#0073ea','รอผล':'#d4831a','ได้แล้ว':'#00854d','ไม่ได้':'#e44258'};
+function renderHistory(){
+  const q=(document.getElementById('hv-srch')||{}).value||'';
+  const filt=(document.getElementById('hv-filter')||{}).value||'all';
+  const visWeeks=weeks.filter(w=>hvSelectedWeeks.has(w.id));
+  let data=[...DATA];
+  if(hvStaffFilter!=='all')data=data.filter(r=>r[0]===hvStaffFilter);
+  if(q){const ql=q.toLowerCase();data=data.filter(r=>r[1].toLowerCase().includes(ql)||r[0].toLowerCase().includes(ql));}
+  if(filt==='has_update')data=data.filter(r=>weeks.some(w=>{const rd=(weekDataCache[w.id]||{})[rowKey(r)]||{};return rd.update||rd.sku||rd.progress;}));
+  if(filt==='no_update')data=data.filter(r=>!weeks.some(w=>{const rd=(weekDataCache[w.id]||{})[rowKey(r)]||{};return rd.update||rd.sku||rd.progress;}));
+  const progFilt=(document.getElementById('hv-prog-filter')||{}).value||'';
+  if(progFilt)data=data.filter(r=>weeks.some(w=>{const p=((weekDataCache[w.id]||{})[rowKey(r)]||{}).progress||'';return p.split('|')[0]===progFilt;}));
+  document.getElementById('hv-count').textContent=`${data.length} accounts`;
+  if(!visWeeks.length){document.getElementById('hv-thead').innerHTML='<tr><th class="hv-th-info">Account</th><th class="hv-th-info" colspan="10" style="text-align:center;color:#c5c7d4;font-style:italic;">เลือกสัปดาห์ที่ต้องการดูด้านบน</th></tr>';document.getElementById('hv-tbody').innerHTML='';return;}
+  const GC_HV={Dent:'#0073ea',BB:'#9f5cf6',Ning:'#00854d',Tos:'#d4831a',Kwang:'#e44258',Mild:'#5cb85c',Nitcha:'#0891b2'};
+  let thead='<tr>';
+  thead+='<th class="hv-th-info" style="min-width:220px;position:sticky;left:0;z-index:30;background:#f4f5f7;">Account</th>';
+  thead+='<th class="hv-th-info" style="min-width:80px;">Staff</th>';
+  thead+='<th class="hv-th-info" style="min-width:90px;">Status</th>';
+  visWeeks.forEach(w=>{const isActive=w.id===activeWeekId;const bg=isActive?'#0073ea':'#476caa';thead+=`<th class="hv-th-week${isActive?' active-week':''}" style="background:${bg};min-width:220px;">${isActive?'<span style="font-size:9px;background:rgba(255,255,255,.25);padding:1px 5px;border-radius:3px;display:inline-block;margin-bottom:3px;">● ปัจจุบัน</span><br/>':''}${w.name}</th>`;});
+  thead+='</tr>';
+  document.getElementById('hv-thead').innerHTML=thead;
+  const groups={};STAFF_ORDER.forEach(s=>{groups[s]=[];});data.forEach(r=>{if(groups[r[0]])groups[r[0]].push(r);});
+  let tbody='';
+  STAFF_ORDER.forEach(staff=>{
+    const rows=groups[staff];if(!rows||!rows.length)return;
+    const col=GC_HV[staff]||'#676879';const colSpan=3+visWeeks.length;
+    tbody+=`<tr class="hv-group-row"><td colspan="${colSpan}" style="border-left:4px solid ${col};"><span style="display:inline-flex;align-items:center;gap:7px;"><span style="width:10px;height:10px;border-radius:2px;background:${col};display:inline-block;"></span>${staff} — ${rows.length} accounts</span></td></tr>`;
+    rows.forEach(r=>{
+      const k=rowKey(r);const stClass=STATUS_TAG[r[2]]||'t-unknown';
+      tbody+='<tr>';
+      tbody+=`<td class="hv-td-acct"><div class="hv-td-acct-name">${r[1]}${buildOptyFlag(rowKey(r))}</div>${r[6]?`<div style="font-size:10px;color:#676879;margin-top:2px;line-height:1.4;">${r[6]}</div>`:''}</td>`;
+      tbody+=`<td style="padding:8px 10px;white-space:nowrap;"><div style="display:flex;align-items:center;gap:5px;"><div class="av av-${r[0]}" style="width:20px;height:20px;font-size:9px;">${r[0].substring(0,2)}</div><span style="font-size:11px;color:#676879;">${r[0]}</span></div></td>`;
+      tbody+=`<td style="padding:8px 10px;">${r[2]?`<span class="tag tag-sm ${stClass}">${r[2]}</span>`:''}</td>`;
+      visWeeks.forEach(w=>{
+        const isActive=w.id===activeWeekId;const rd=(weekDataCache[w.id]||{})[k]||{};const hasData=rd.update||rd.sku||rd.progress;
+        let cellContent='';
+        if(hasData){if(rd.update)cellContent+=`<div class="hv-upd-txt">${rd.update}</div>`;if(rd.sku)cellContent+=`<div class="hv-sku-row"><span style="font-size:10px;color:#0060c0;">🏷</span><span class="hv-sku-val">${rd.sku}</span></div>`;if(rd.progress){const pb=rd.progress.split('|')[0];const pr=rd.progress.split('|')[1]||'';const bc=PROG_BADGE_CLASS[pb]||'pp-none';const dc=PROG_DOT_COLOR_HV[pb]||'#c5c7d4';cellContent+='<span class="hv-prog-pill '+bc+'"><span style="width:6px;height:6px;border-radius:50%;background:'+dc+';display:inline-block;margin-right:3px;"></span>'+pb+(pr?' <span style="font-size:9px;opacity:.8;">('+pr+')</span>':'')+'</span>';}}
+        else{cellContent='<span class="hv-no-entry">ไม่มีอัพเดท</span>';}
+        tbody+=`<td class="hv-td-week${isActive?' active-col':''}${!hasData?' no-data':''}">${cellContent}</td>`;
+      });
+      tbody+='</tr>';
+    });
+  });
+  document.getElementById('hv-tbody').innerHTML=tbody;
+}
+
+
+// ══════════════════════════════
+// GMV MONITOR
+// ══════════════════════════════
+const GMV_STAFF_ORDER_G = ['Dent','BB','Ning','Tos','Kwang','Mild','Nitcha'];
+const GMV_STAFF_COLORS = {
+  Dent:'#0073ea',BB:'#9f5cf6',Ning:'#00854d',
+  Tos:'#d4831a',Kwang:'#e44258',Mild:'#5cb85c',
+  Nitcha:'#0891b2'
+};
+const GMV_MONTHS = ['Jan','Feb','Mar','Apr','May'];
+const GMV_MONTH_LABELS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.'];
+let gmvData = window._gmvOverride||GMV_EMBEDDED;
+let gmvStaffFilter = 'all';
+let gmvChartInstance = null;
+
+function gmvSetStaff(s){
+  gmvStaffFilter=s;
+  document.querySelectorAll('#gmv-wrap .chip').forEach(c=>c.classList.remove('on'));
+  const el=document.getElementById('gfc-'+s);if(el)el.classList.add('on');
+  renderGMV();
+}
+function getGMVFiltered(){
+  let d=[...gmvData];
+  if(gmvStaffFilter!=='all')d=d.filter(r=>r.staff===gmvStaffFilter);
+  return d;
+}
+function fmt(n){
+  if(!n||n===0)return'—';
+  if(n>=1000000)return(n/1000000).toFixed(1)+'M';
+  if(n>=1000)return Math.round(n/1000)+'K';
+  return n.toLocaleString();
+}
+function momPct(apr,rr){
+  if(!apr||apr===0)return null;
+  return((rr-apr)/apr*100);
+}
+function getLatestAction(accountName){
+  for(const wid of weeks.map(w=>w.id)){
+    const cache=weekDataCache[wid]||{};
+    for(const [key,val] of Object.entries(cache)){
+      const parts=key.split('||');
+      if(parts.length===2&&accountName&&parts[1]&&accountName.substring(0,12)===parts[1].substring(0,12)){
+        if(val.update||val.sku||val.progress)return val.update||'';
+      }
+    }
+  }
+  return null;
+}
+function renderGMVCards(data){
+  const totalMay=data.reduce((s,r)=>s+(r.May||0),0);
+  const totalApr=data.reduce((s,r)=>s+(r.Apr||0),0);
+  const totalRR=data.reduce((s,r)=>s+(r.runrate||0),0);
+  const mom=momPct(totalApr,totalRR);
+  const declining=data.filter(r=>momPct(r.Apr,r.runrate)<0).length;
+  const noAction=data.filter(r=>{const m=momPct(r.Apr,r.runrate);return m<0&&!getLatestAction(r.account_name);}).length;
+  const cards=[
+    {label:'GMV รวม (พ.ค. MTD)',val:fmt(totalMay),sub:'Actual month-to-date',cls:'card-total'},
+    {label:'Runrate พ.ค.',val:fmt(totalRR),sub:'Projected full month',cls:'card-runrate'},
+    {label:'MoM% (เม.ย.→พ.ค. RR)',val:mom!==null?(mom>=0?'+':'')+mom.toFixed(1)+'%':'—',sub:'vs เดือนที่แล้ว',cls:mom!==null&&mom>=0?'card-mom-up':'card-mom-down',valCls:mom!==null&&mom>=0?'up':'down'},
+    {label:'ร้านที่ยอดลด',val:declining,sub:'MoM Runrate เป็นลบ',cls:'card-alert',valCls:'warn'},
+    {label:'ยอดลด + ยังไม่มี action',val:noAction,sub:'ดูจาก weekly update',cls:'card-alert',valCls:noAction>0?'down':''},
+  ];
+  const cardActions=['','','','declining','no_action'];
+  document.getElementById('gmv-cards').innerHTML=cards.map((c,i)=>{
+    const clickable=i>=3;
+    const act=cardActions[i];
+    const extra=clickable?' style="cursor:pointer;" data-gmvact="'+act+'"':'';
+    const hint=clickable?'<div style="font-size:10px;color:#0073ea;margin-top:4px;">คลิกเพื่อดูรายชื่อ →</div>':'';
+    return'<div class="gmv-card '+c.cls+'"'+extra+'>'
+      +'<div class="gmv-card-label">'+c.label+'</div>'
+      +'<div class="gmv-card-val '+(c.valCls||'')+'">'+c.val+'</div>'
+      +'<div class="gmv-card-sub">'+c.sub+'</div>'
+      +hint+'</div>';
+  }).join('');
+  document.querySelectorAll('[data-gmvact]').forEach(function(el){
+    el.onclick=function(){openGMVListModal(el.getAttribute('data-gmvact'));};
+  });
+}
+function renderGMVChart(){
+  const mode=(document.getElementById('gmv-chart-mode')||{}).value||'stacked';
+  const data=getGMVFiltered();
+  const canvas=document.getElementById('gmv-bar-chart');
+  if(!canvas)return;
+  if(gmvChartInstance){gmvChartInstance.destroy();gmvChartInstance=null;}
+  const ctx=canvas.getContext('2d');
+  const labels=[...GMV_MONTH_LABELS,'RR'];
+  if(mode==='total'){
+    const totals=GMV_MONTHS.map(m=>data.reduce((s,r)=>s+(r[m]||0),0));
+    const rrVal=data.reduce((s,r)=>s+(r.runrate||0),0);
+    gmvChartInstance=new Chart(ctx,{type:'bar',data:{labels,datasets:[{label:'Team GMV',data:[...totals,rrVal],backgroundColor:['rgba(0,115,234,0.35)','rgba(0,115,234,0.35)','rgba(0,115,234,0.35)','rgba(0,115,234,0.35)','rgba(0,115,234,0.6)','rgba(0,133,77,0.6)'],borderColor:['#0073ea','#0073ea','#0073ea','#0073ea','#0073ea','#00854d'],borderWidth:2,borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>fmt(v)}}}}});
+    return;
+  }
+  const staffList=gmvStaffFilter==='all'?GMV_STAFF_ORDER_G:[gmvStaffFilter];
+  const datasets=staffList.map(staff=>{
+    const sData=data.filter(r=>r.staff===staff);
+    const vals=[...GMV_MONTHS.map(m=>sData.reduce((s,r)=>s+(r[m]||0),0)),sData.reduce((s,r)=>s+(r.runrate||0),0)];
+    const col=GMV_STAFF_COLORS[staff]||'#999';
+    return{label:staff,data:vals,backgroundColor:col+'99',borderColor:col,borderWidth:1,borderRadius:3};
+  });
+  gmvChartInstance=new Chart(ctx,{type:'bar',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:12}}}},scales:{x:{stacked:mode==='stacked'},y:{stacked:mode==='stacked',ticks:{callback:v=>fmt(v)}}}}});
+}
+function renderGMVTable(){
+  let data=getGMVFiltered();
+  const q=(document.getElementById('gmv-search')||{}).value.toLowerCase()||'';
+  const alertFilt=(document.getElementById('gmv-alert-filter')||{}).value||'all';
+  const sortMode=(document.getElementById('gmv-sort')||{}).value||'mom_desc';
+  if(q)data=data.filter(r=>r.account_name.toLowerCase().includes(q)||(r.staff||'').toLowerCase().includes(q));
+  if(alertFilt==='declining')data=data.filter(r=>momPct(r.Apr,r.runrate)<0);
+  if(alertFilt==='no_action')data=data.filter(r=>{const m=momPct(r.Apr,r.runrate);return m!==null&&m<0&&!getLatestAction(r.account_name);});
+  if(sortMode==='mom_desc')data.sort((a,b)=>(momPct(a.Apr,a.runrate)||0)-(momPct(b.Apr,b.runrate)||0));
+  if(sortMode==='mom_asc')data.sort((a,b)=>(momPct(b.Apr,b.runrate)||0)-(momPct(a.Apr,a.runrate)||0));
+  if(sortMode==='gmv_desc')data.sort((a,b)=>(b.Apr||0)-(a.Apr||0));
+  if(sortMode==='runrate_desc')data.sort((a,b)=>(b.runrate||0)-(a.runrate||0));
+  document.getElementById('gmv-table-count').textContent=`${data.length} accounts`;
+  let html='';
+  data.forEach((r,i)=>{
+    const mom=momPct(r.Apr,r.runrate);
+    const momStr=mom!==null?(mom>=0?'+':'')+mom.toFixed(1)+'%':'—';
+    const momCls=mom===null?'mom-neutral':mom>=0?'mom-up':'mom-down';
+    const isDecline=mom!==null&&mom<0;
+    const action=getLatestAction(r.account_name);
+    const actionBadge=action?`<span class="action-badge">✓ มี action</span>`:(isDecline?`<span class="no-action-badge">⚠ ยังไม่มี</span>`:'<span style="color:#c5c7d4;font-size:11px;">—</span>');
+    const col=GMV_STAFF_COLORS[r.staff]||'#999';
+    html+=`<tr style="cursor:pointer;" onclick="openGMVModal('${r.account_name.replace(/'/g,"\\'")}')">
+      <td style="text-align:center;color:#c5c7d4;font-size:11px;">${i+1}</td>
+      <td>${isDecline?'<span class="alert-dot"></span>':''}<span style="font-size:12px;font-weight:500;">${r.account_name}</span></td>
+      <td><span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:${col};display:inline-block;"></span><span style="font-size:11px;color:#676879;">${r.staff}</span></span></td>
+      <td style="color:#676879;">${fmt(r.Jan)}</td><td style="color:#676879;">${fmt(r.Feb)}</td>
+      <td style="color:#676879;">${fmt(r.Mar)}</td><td style="font-weight:500;">${fmt(r.Apr)}</td>
+      <td style="font-weight:500;color:#0073ea;">${fmt(r.May)}</td>
+      <td style="font-weight:600;">${fmt(r.runrate)}</td>
+      <td class="${momCls}">${momStr}</td>
+      <td>${actionBadge}</td>
+    </tr>`;
+  });
+  document.getElementById('gmv-tbody').innerHTML=html||'<tr><td colspan="11" style="text-align:center;padding:24px;color:#c5c7d4;">ไม่พบข้อมูล</td></tr>';
+}
+function renderGMV(){gmvData=window._gmvOverride||GMV_EMBEDDED;
+  const data=getGMVFiltered();
+  renderGMVCards(data);
+  renderGMVChart();
+  renderGMVTable();
+}
+function handleGMVUpload(input){
+  const file=input.files[0];if(!file)return;
+  const ext=file.name.split('.').pop().toLowerCase();
+  if(ext!=='xlsx'&&ext!=='xls'){alert('กรุณาอัพโหลดไฟล์ Excel (.xlsx หรือ .xls) เท่านั้น');input.value='';return;}
+
+  const STAFF_MAP=[
+    {p:/chaklid|dent\b/i,       s:'Dent'},
+    {p:/anusorn|bookbig/i,       s:'BB'},
+    {p:/duangruedee|\bning\b/i,  s:'Ning'},
+    {p:/napat|\bto\b|\btos\b/i,  s:'Tos'},
+    {p:/nuttawan|kwang/i,        s:'Kwang'},
+    {p:/rinlaphat|mild\b/i,      s:'Mild'},
+    {p:/ploynitcha|nitcha/i,     s:'Nitcha'},
+  ];
+  function mapStaff(raw){
+    if(!raw)return null;
+    const r=String(raw).trim();
+    for(const m of STAFF_MAP)if(m.p.test(r))return m.s;
+    if(['Dent','BB','Ning','Tos','Kwang','Mild','Nitcha'].includes(r))return r;
+    return null;
+  }
+  function toNum(v){return parseFloat(String(v||0).replace(/,/g,''))||0;}
+
+  // Detect if a value looks like a JS Date serial or Date object
+  function isDateVal(v){return v instanceof Date||(typeof v==='number'&&v>40000&&v<60000);}
+
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array',cellDates:true});
+      // Pick best sheet
+      let sheetName=wb.SheetNames[0];
+      for(const sn of wb.SheetNames)if(/account|month|q2|chain/i.test(sn)){sheetName=sn;break;}
+      const ws=wb.Sheets[sheetName];
+
+      // ── Detect format ──────────────────────────────────────────────────
+      // Convert to array-of-arrays (raw) to inspect structure
+      const raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:null,raw:false});
+      if(!raw.length){alert('ไม่พบข้อมูลใน Excel');return;}
+
+      let parsed=[];
+      let skipped=0;
+      let srcLabel='';
+
+      // ── FORMAT A: Freshket export (header=row6, date cols, runrate col) ──
+      // Detect: row at index 5 has 'New staff' or 'account_name' in col 0/2
+      const detectRowA = raw.findIndex(r=>
+        r&&(String(r[0]||'').toLowerCase().includes('staff')||
+            String(r[2]||'').toLowerCase().includes('account'))
+      );
+
+      if(detectRowA>=0){
+        srcLabel='Freshket Export';
+        const hdrRow=raw[detectRowA];
+        // Map column index to month label
+        // Columns are dates — find Jan26,Feb26,Mar26,Apr26,May26,Runrate
+        const TARGET_MONTHS=[
+          {key:'Jan',year:2026,month:1},
+          {key:'Feb',year:2026,month:2},
+          {key:'Mar',year:2026,month:3},
+          {key:'Apr',year:2026,month:4},
+          {key:'May',year:2026,month:5},
+        ];
+        const colMap={};
+        // Track Month N columns to map to calendar months
+        // Month 1=Jan, Month 2=Feb, ..., Month 12=Dec
+        const monthNumCols={};  // month_number -> last ci seen
+        for(let ci=3;ci<hdrRow.length;ci++){
+          const cell=String(hdrRow[ci]||'');
+          // Try date object
+          if(hdrRow[ci] instanceof Date){
+            const d=hdrRow[ci];
+            const y=d.getFullYear(),m=d.getMonth()+1;
+            for(const tm of TARGET_MONTHS){if(tm.year===y&&tm.month===m)colMap[tm.key]=ci;}
+          }
+          // Try 'Month N' pattern
+          const mMatch=cell.match(/month\s*(\d+)/i);
+          if(mMatch){
+            const mNum=parseInt(mMatch[1]);
+            monthNumCols[mNum]=ci;  // last occurrence wins (e.g. Month 5 appears twice - use second one for May MTD)
+          }
+          // Try date string with year
+          if(typeof hdrRow[ci]==='string'&&hdrRow[ci].match(/\d{4}/)){
+            const d=new Date(hdrRow[ci]);
+            if(!isNaN(d)){const y=d.getFullYear(),m=d.getMonth()+1;for(const tm of TARGET_MONTHS){if(tm.year===y&&tm.month===m)colMap[tm.key]=ci;}}
+          }
+          // Runrate
+          if(/run/i.test(cell))colMap['runrate']=ci;
+        }
+        // Map Month N -> Jan-May if no date-based mapping found
+        if(colMap['Jan']===undefined&&monthNumCols[1]!==undefined){
+          if(monthNumCols[1]!==undefined)colMap['Jan']=monthNumCols[1];
+          if(monthNumCols[2]!==undefined)colMap['Feb']=monthNumCols[2];
+          if(monthNumCols[3]!==undefined)colMap['Mar']=monthNumCols[3];
+          if(monthNumCols[4]!==undefined)colMap['Apr']=monthNumCols[4];
+          // Month 5 appears twice: first=May last year, second=May this year (MTD)
+          // Use last occurrence for May MTD
+          if(monthNumCols[5]!==undefined)colMap['May']=monthNumCols[5];
+        }
+        // Fallback runrate
+        if(colMap['runrate']===undefined)colMap['runrate']=hdrRow.length-2;
+        // May MTD fallback: if May not found via date match (col might be labeled 2025-05-01 instead of 2026-05-01)
+        // Use the column immediately before Runrate
+        if(colMap['May']===undefined&&colMap['runrate']!==undefined){
+          colMap['May']=colMap['runrate']-1;
+        }
+
+        for(let ri=detectRowA+1;ri<raw.length;ri++){
+          const r=raw[ri];if(!r||!r[0])continue;
+          const shortName=mapStaff(String(r[0]||''));
+          const acct=String(r[2]||'').trim();
+          if(!shortName||!acct){skipped++;continue;}
+          parsed.push({
+            staff:shortName,account_name:acct,
+            Jan:toNum(colMap['Jan']!=null?r[colMap['Jan']]:0),
+            Feb:toNum(colMap['Feb']!=null?r[colMap['Feb']]:0),
+            Mar:toNum(colMap['Mar']!=null?r[colMap['Mar']]:0),
+            Apr:toNum(colMap['Apr']!=null?r[colMap['Apr']]:0),
+            May:toNum(colMap['May']!=null?r[colMap['May']]:0),
+            runrate:toNum(colMap['runrate']!=null?r[colMap['runrate']]:0),
+          });
+        }
+
+      } else {
+        // ── FORMAT B: Simple CSV-style (row1=header, cols=staff,account_name,Jan,Feb,...) ──
+        srcLabel='Simple Format';
+        const jsonRows=XLSX.utils.sheet_to_json(ws,{defval:''});
+        const keys=Object.keys(jsonRows[0]||{});
+        function fc(...patterns){
+          for(const p of patterns){const k=keys.find(k=>new RegExp(p,'i').test(k));if(k)return k;}
+          return null;
+        }
+        const staffCol=fc('staff','sale');
+        const acctCol =fc('account_name','account','ชื่อร้าน');
+        const janCol  =fc('^jan','ม\\.?ค');
+        const febCol  =fc('^feb','ก\\.?พ');
+        const marCol  =fc('^mar','มี\\.?ค');
+        const aprCol  =fc('^apr','เม\\.?ย');
+        const mayCol  =fc('^may','พ\\.?ค');
+        const rrCol   =fc('run','rr');
+        if(!staffCol||!acctCol){
+          alert('ไม่พบคอลัมน์ staff หรือ account_name\nคอลัมน์ที่เจอ: '+keys.slice(0,8).join(', '));
+          return;
+        }
+        for(const row of jsonRows){
+          const shortName=mapStaff(String(row[staffCol]||''));
+          const acct=String(row[acctCol]||'').trim();
+          if(!shortName||!acct){skipped++;continue;}
+          parsed.push({
+            staff:shortName,account_name:acct,
+            Jan:toNum(janCol?row[janCol]:0),Feb:toNum(febCol?row[febCol]:0),
+            Mar:toNum(marCol?row[marCol]:0),Apr:toNum(aprCol?row[aprCol]:0),
+            May:toNum(mayCol?row[mayCol]:0),runrate:toNum(rrCol?row[rrCol]:0),
+          });
+        }
+      }
+
+      if(!parsed.length){
+        alert('ไม่พบข้อมูลที่ใช้ได้ (skipped '+skipped+' rows)\nรูปแบบที่รองรับ: Freshket Export หรือ Simple Format');
+        return;
+      }
+
+      window._gmvOverride=parsed;
+      try{localStorage.setItem('fk_gmv_override',JSON.stringify(parsed));localStorage.setItem('fk_gmv_override_src',src.textContent||file.name);}catch(e){}
+      const src=document.getElementById('gmv-data-source');
+      if(src)src.textContent='📊 '+srcLabel+': '+file.name+' ('+parsed.length+' accounts'+(skipped?' / ข้าม '+skipped:'')+')';
+      renderGMV();
+      input.value='';
+
+    }catch(err){
+      alert('อ่านไฟล์ไม่ได้: '+err.message);
+      console.error(err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+function _normName(s){
+  s=s.toLowerCase();
+  ['บริษัท','เครือ','จำกัด','(มหาชน)','(ประเทศไทย)','สำนักงานใหญ่','จํากัด'].forEach(w=>{s=s.split(w).join('');});
+  s=s.split('&')[0].split('/')[0];
+  return s.replace(/[^\u0e00-\u0e7fa-zA-Z0-9]/g,' ').replace(/\s+/g,' ').trim();
+}
+
+const _GMV_NORM_MAP = {"hospitality management asia hma": {"mom": 1.4, "apr": 1885418.0, "rr": 1911544.0}, "เท เอกมัย": {"mom": -16.5, "apr": 1064986.0, "rr": 889788.0}, "ปตท น้ำมันและการค้าปลีก upcountry": {"mom": 18.1, "apr": 1275285.0, "rr": 1505748.0}, "lk group": {"mom": 19.1, "apr": 393861.0, "rr": 469095.0}, "มั่งมี โภชนา": {"mom": 2.8, "apr": 469154.0, "rr": 482155.0}, "อูมามิ เรสเตอรองต์": {"mom": -5.0, "apr": 788025.0, "rr": 748648.0}, "nam nam pasta": {"mom": -4.9, "apr": 341442.0, "rr": 324567.0}, "ข้าว โซ อิ กรุ๊ป": {"mom": 2.8, "apr": 414862.0, "rr": 426481.0}, "ปตท น้ำมันและการค้าปลีก bkk": {"mom": 6.3, "apr": 629991.0, "rr": 669620.0}, "อมารี พัทยา": {"mom": -11.5, "apr": 279310.0, "rr": 247294.0}, "ที ดับบลิว เอส ที": {"mom": -14.6, "apr": 321071.0, "rr": 274275.0}, "at mind group": {"mom": -16.7, "apr": 257563.0, "rr": 214469.0}, "ดี ดี เอ็ม โฮเทล": {"mom": 10.8, "apr": 193824.0, "rr": 214816.0}, "บางกอกเบียร์แอนด์เบเวอร์เรจ": {"mom": -40.3, "apr": 227916.0, "rr": 136124.0}, "เอ็มเบอร์ ตานี": {"mom": -32.1, "apr": 216518.0, "rr": 147020.0}, "บีเอซี กูร์เมท์ เฮ้าส์": {"mom": 15.4, "apr": 279064.0, "rr": 322178.0}, "สมาร์ท ยูไนเต็ด": {"mom": 40.1, "apr": 155014.0, "rr": 217195.0}, "โบ ลานและสโลนส์ อาหารฝรั่ง parent": {"mom": -24.4, "apr": 201681.0, "rr": 152533.0}, "ร่วมอิสสระ ดีเวล็อปเมนท์": {"mom": 1.3, "apr": 151122.0, "rr": 153061.0}, "กินกันจัง": {"mom": -6.8, "apr": 199792.0, "rr": 186233.0}, "โซยู ฟู้ด": {"mom": -18.2, "apr": 192686.0, "rr": 157524.0}, "พีเบอร์รี่ ไทย": {"mom": -66.1, "apr": 254562.0, "rr": 86336.0}, "นอสแทลจิค เอฟแอนด์บี": {"mom": 35.3, "apr": 100151.0, "rr": 135546.0}, "พาข้าวก๋อ": {"mom": -27.8, "apr": 56890.0, "rr": 41076.0}, "อินเดียเกท ฮอสพิเทลลิตี้": {"mom": null, "apr": 0, "rr": 0}, "คิงส์ตัน โฮลดิ้งส์": {"mom": 7.5, "apr": 116536.0, "rr": 125327.0}, "นายูกิ โฮลดิ้ง": {"mom": null, "apr": 0, "rr": 47769.0}, "เอเวอร์กรีน ฮอสพิทัลลิตี้": {"mom": 7.5, "apr": 81718.0, "rr": 87818.0}, "แกดอะเบาท์ ฮอสพิทาลิตี้": {"mom": null, "apr": 0, "rr": 0}, "สยาม ออยล์ คอฟฟี่": {"mom": null, "apr": 900.0, "rr": 0}, "ชาบู บารู": {"mom": 1.7, "apr": 1798814.0, "rr": 1829467.0}, "สล็อธ ชาบู": {"mom": 3.7, "apr": 1091853.0, "rr": 1132233.0}, "รวยปังปัง": {"mom": -18.8, "apr": 663982.0, "rr": 539271.0}, "ซีเอ็มซี เดอะ สตรีท": {"mom": 17.1, "apr": 572416.0, "rr": 670546.0}, "สเต็กกินกับอาหารคลีน คุณศรัณย์ พิพัฒน์ศรีสวัสดิ์ parent": {"mom": 11.5, "apr": 669064.0, "rr": 745767.0}, "ริชเทสท์ฮับ": {"mom": -9.1, "apr": 283291.0, "rr": 257539.0}, "มากุโระ กรุ๊ป": {"mom": -8.2, "apr": 94103.0, "rr": 86387.0}, "โนวา อินเตอร์เทรด": {"mom": 30.3, "apr": 251554.0, "rr": 327685.0}, "เอสเจ ฟู้ด เวิลด์": {"mom": 15.4, "apr": 192450.0, "rr": 222043.0}, "ศรีอยุธยา ฮอสปิทาลิตี้": {"mom": 8.8, "apr": 193368.0, "rr": 210347.0}, "โฮตารุ คอร์ปอเรท": {"mom": -7.9, "apr": 215470.0, "rr": 198354.0}, "เฮงนำเฮง": {"mom": 22.6, "apr": 165192.0, "rr": 202524.0}, "โทคุ ไทยแลนด์": {"mom": 17.8, "apr": 162685.0, "rr": 191618.0}, "ไอแอม บุชเชอร์": {"mom": -27.0, "apr": 414779.0, "rr": 302979.0}, "คฤหาสน์สราสินี": {"mom": -36.5, "apr": 214527.0, "rr": 136299.0}, "โนบีฟ": {"mom": 15.2, "apr": 159242.0, "rr": 183411.0}, "ฟีนิกซ์ ฟู้ดส์ เวิลด์ สาขา 1": {"mom": 94.9, "apr": 154140.0, "rr": 300406.0}, "renaissance pattaya": {"mom": -24.1, "apr": 136868.0, "rr": 103842.0}, "hilton garden inn bangkok silom": {"mom": 28.1, "apr": 44230.0, "rr": 56671.0}, "ซูชินะ": {"mom": 29.4, "apr": 106706.0, "rr": 138118.0}, "พรีโม ฟู้ด แอนด์ เบฟเวอเรจ": {"mom": -18.2, "apr": 128673.0, "rr": 105256.0}, "carlton hotel bangkok sukhumvit": {"mom": -32.0, "apr": 164930.0, "rr": 112209.0}, "บีจี ทีม": {"mom": -0.4, "apr": 135992.0, "rr": 135483.0}, "ซัมมิท วินด์มิลล์ กอล์ฟ คลับ": {"mom": -1.7, "apr": 122748.0, "rr": 120607.0}, "ซิตี้สเปซ": {"mom": 13.8, "apr": 112858.0, "rr": 128485.0}, "โตโต้ โฮลดิ้ง": {"mom": 2.9, "apr": 97206.0, "rr": 100014.0}, "ชิโซ ดีไลท์": {"mom": -22.4, "apr": 108307.0, "rr": 84090.0}, "ยัสปาล": {"mom": -20.7, "apr": 102770.0, "rr": 81482.0}, "สลิล ดีเวลลอปเม้นท์": {"mom": 45.8, "apr": 90647.0, "rr": 132200.0}, "แจลลุกซ์ เอเซีย": {"mom": 8.7, "apr": 93970.0, "rr": 102140.0}, "บ้านหลานยาย": {"mom": -18.1, "apr": 71066.0, "rr": 58206.0}, "นาราไทย": {"mom": 69.3, "apr": 22276.0, "rr": 37711.0}, "ทวินเมด": {"mom": 95.6, "apr": 15157.0, "rr": 29642.0}, "ไอเบอร์รี่ โฮมเมด": {"mom": 27.3, "apr": 2384401.0, "rr": 3035866.0}, "ปิโตรเลียมไทยคอร์ปอเรชั่น": {"mom": 13.6, "apr": 2731479.0, "rr": 3102954.0}, "ดักแด้ กรุ๊ป": {"mom": 23.2, "apr": 1904644.0, "rr": 2347395.0}, "ไทยสากล เอสเตท": {"mom": 1.2, "apr": 498752.0, "rr": 504696.0}, "วีต้าเทรด": {"mom": 6.2, "apr": 530042.0, "rr": 562744.0}, "ฮอบส์ อินเตอร์เนชั่นแนล กรุ๊ป": {"mom": -10.5, "apr": 393457.0, "rr": 352249.0}, "จีเอฟเอ คอร์ปอเรชั่น ไทยแลนด์": {"mom": 4.9, "apr": 563809.0, "rr": 591610.0}, "ลิฟวิ่ง แอนด์ ฟาซิลิตี้": {"mom": -7.2, "apr": 555903.0, "rr": 515960.0}, "บรูอิ้งแฮปปี้เนส": {"mom": 24.5, "apr": 452709.0, "rr": 563611.0}, "mickey diner": {"mom": -1.9, "apr": 416115.0, "rr": 408121.0}, "ธนบุรี เวลบีอิ้ง": {"mom": 34.5, "apr": 187736.0, "rr": 252504.0}, "มั่งมีไทยฟู๊ด": {"mom": -8.6, "apr": 43701.0, "rr": 39936.0}, "บิซโบล": {"mom": 23.3, "apr": 113053.0, "rr": 139401.0}, "ยำ คอนเนคทีฟ": {"mom": 18.3, "apr": 271724.0, "rr": 321414.0}, "บาเฮ่าเทียนมี่": {"mom": -5.0, "apr": 273086.0, "rr": 259516.0}, "บีที ซงฟา": {"mom": 1.9, "apr": 257368.0, "rr": 262344.0}, "เซิร์ฟ เวลล์ เมเนจเม้นท์ wus printed circuit ooa": {"mom": -6.7, "apr": 259228.0, "rr": 241912.0}, "ไอเอสเอฟ ฟู้ด": {"mom": -29.5, "apr": 295901.0, "rr": 208464.0}, "มิตรพันธ์ แอ็สเซ็ท ดีเวลอปเม้นท์": {"mom": -3.7, "apr": 176423.0, "rr": 169926.0}, "tribe122 hotel": {"mom": -27.5, "apr": 147956.0, "rr": 107330.0}, "แพลนทิฟุล": {"mom": 44.9, "apr": 94849.0, "rr": 137419.0}, "กินดื่ม": {"mom": 172.8, "apr": 111971.0, "rr": 305417.0}, "lilit hotel": {"mom": 8.6, "apr": 125021.0, "rr": 135779.0}, "กอร์เมท์ อินโนเวชัน": {"mom": -5.1, "apr": 143212.0, "rr": 135871.0}, "ทรอพพิคอล ไอแลนด์": {"mom": null, "apr": 0, "rr": 0}, "ไทเรียว ฟู้ด": {"mom": -21.4, "apr": 90347.0, "rr": 70987.0}, "ไทยเกษม เรสโตรองต์": {"mom": 3.8, "apr": 2917854.0, "rr": 3028287.0}, "ฮอตพอตแมน กรุ๊ป": {"mom": 18.7, "apr": 1629001.0, "rr": 1933213.0}, "เบทาโกร": {"mom": 19.3, "apr": 630326.0, "rr": 751783.0}, "ซาวบ้าน": {"mom": 1.5, "apr": 829722.0, "rr": 842289.0}, "seefah group": {"mom": 30.1, "apr": 782867.0, "rr": 1018159.0}, "เคนชิน อิซากายะ": {"mom": 5.8, "apr": 388077.0, "rr": 410691.0}, "แลนด์มาร์ค โฮเต็ล แมเนจเม้นท์": {"mom": 45.2, "apr": 97545.0, "rr": 141595.0}, "เรดแพนด้ายากินิกุ": {"mom": 14.0, "apr": 500224.0, "rr": 570370.0}, "เฌอฌิมน์": {"mom": 14.6, "apr": 292828.0, "rr": 335712.0}, "พ็อกเก็ต ร็อกเก็ต": {"mom": 5.5, "apr": 375792.0, "rr": 396325.0}, "โคโค โกลบอล ฮอสพิทอลลิตี้": {"mom": -15.1, "apr": 342918.0, "rr": 291141.0}, "เสะเมะรุเซะ": {"mom": 10.2, "apr": 290112.0, "rr": 319594.0}, "เฮอร์มีส กอล์ฟ คลับ": {"mom": -38.7, "apr": 317138.0, "rr": 194317.0}, "99 เรียลเอสเตท ดีเวลลอปเม้นท์": {"mom": -20.9, "apr": 309468.0, "rr": 244761.0}, "ฟอร์จูน ซิกส์": {"mom": 3.8, "apr": 230457.0, "rr": 239313.0}, "ไทยเบฟเวอเรจ": {"mom": -28.0, "apr": 336238.0, "rr": 242147.0}, "โนเบิล เรสเตอท์รองต์": {"mom": -17.1, "apr": 232487.0, "rr": 192839.0}, "คุ้มสึ": {"mom": -6.2, "apr": 333897.0, "rr": 313037.0}, "ซูกิชิ อินเตอร์กรุ๊ป": {"mom": -21.4, "apr": 93380.0, "rr": 73398.0}, "เจ เจ สยามพัฒนา": {"mom": 42.7, "apr": 194829.0, "rr": 278031.0}, "ซีบี ทีเอ เทรดดิ้ง": {"mom": -11.2, "apr": 13168.0, "rr": 11692.0}, "ทาการะ เอฟ แอนด์ บี": {"mom": 7.2, "apr": 159011.0, "rr": 170530.0}, "เอฟบีเบลล์ลี่": {"mom": -0.2, "apr": 140265.0, "rr": 139995.0}, "เดอะเรสเตอร์รองท์ กรุ๊ป": {"mom": -23.8, "apr": 211276.0, "rr": 161027.0}, "ธนจิรา โฮม": {"mom": -11.8, "apr": 198495.0, "rr": 175083.0}, "ซีเลค เซอร์วิส พาร์ทเนอร์": {"mom": -13.2, "apr": 210463.0, "rr": 182640.0}, "ชาโต เดอ แบงคอค": {"mom": 4.7, "apr": 105702.0, "rr": 110651.0}, "ส้มพาสุข": {"mom": -14.4, "apr": 133242.0, "rr": 114028.0}, "เพลิคาน่า": {"mom": null, "apr": 0, "rr": 0}, "โกพิซซ่า": {"mom": -19.8, "apr": 68297.0, "rr": 54747.0}, "thai lion mentari co ltd": {"mom": 153.4, "apr": 17940.0, "rr": 45459.0}, "เพอร์เฟค สเตป": {"mom": 4.1, "apr": 60319.0, "rr": 62796.0}, "pmw international co ltd": {"mom": -58.3, "apr": 16749.0, "rr": 6982.0}, "โลวา ฮอสพิแทลลิที": {"mom": 8.7, "apr": 1636064.0, "rr": 1778836.0}, "เบรคฟาสต์ สตอรี่": {"mom": -4.1, "apr": 1056540.0, "rr": 1013501.0}, "sarnies coffee": {"mom": 2.3, "apr": 1318457.0, "rr": 1349369.0}, "ยินดีต้อนรับ 65": {"mom": 18.8, "apr": 1289562.0, "rr": 1532633.0}, "พีพีจี ฮีลส์": {"mom": -45.4, "apr": 1971056.0, "rr": 1075310.0}, "ภิรัชแอนด์บียอนด์เวนเจอร์ส": {"mom": 33.3, "apr": 497149.0, "rr": 662644.0}, "สมบัติเติมตระกูล": {"mom": 6.1, "apr": 700854.0, "rr": 743441.0}, "สุขใจ นำเสนอ": {"mom": 10.8, "apr": 536662.0, "rr": 594869.0}, "โนส ที": {"mom": null, "apr": 0, "rr": 0}, "โรชาน อินเตอร์เนชั่นแนล": {"mom": -7.5, "apr": 314709.0, "rr": 291260.0}, "บ้านสมถวิลซีเนียร์แคร์": {"mom": 3.5, "apr": 319167.0, "rr": 330382.0}, "เอกอิ่มทรัพย์": {"mom": -2.5, "apr": 279149.0, "rr": 272127.0}, "ซัมเมอร์ส พิซซ่า": {"mom": -26.0, "apr": 305860.0, "rr": 226215.0}, "salada parent": {"mom": 7.5, "apr": 232740.0, "rr": 250144.0}, "ดิ เอ็กซ์เซคคิวทิฟ เลาจ์ ไทยแลนด์": {"mom": -13.3, "apr": 217001.0, "rr": 188145.0}, "ชินกู่ คอนเนค": {"mom": 17.0, "apr": 62447.0, "rr": 73086.0}, "เบรฟแบรนด์": {"mom": -39.5, "apr": 368776.0, "rr": 222945.0}, "เค สตรีท": {"mom": 7.7, "apr": 250231.0, "rr": 269388.0}, "ข้าวสารพาเลซ": {"mom": -9.6, "apr": 183810.0, "rr": 166122.0}, "ริเวอร์ไว้บ": {"mom": -17.5, "apr": 149557.0, "rr": 123324.0}, "sol and luna": {"mom": -23.5, "apr": 181816.0, "rr": 139074.0}, "มีเดียฟร้อนท์": {"mom": 4.6, "apr": 161810.0, "rr": 169202.0}, "ทริปเปิ้ล เอ็น คอร์ปอเรชั่น": {"mom": -1.3, "apr": 179852.0, "rr": 177535.0}, "เลท มี ที": {"mom": 4.4, "apr": 212441.0, "rr": 221879.0}, "คั่วพริกเกลือ": {"mom": -5.9, "apr": 106239.0, "rr": 99923.0}, "บุชเชอร์ แฟคตอรี่ เรสเตอรองต์": {"mom": 22.2, "apr": 69213.0, "rr": 84586.0}, "ธรรมชาติ ซีฟู้ด รีเทล": {"mom": 20.9, "apr": 63575.0, "rr": 76885.0}, "เออแซ่บ ฟู้ด แอนด์ เรสเตอรองท์": {"mom": null, "apr": 0, "rr": 0}, "คอมพานี บี": {"mom": null, "apr": 0, "rr": 0}, "ชาคาริคิ 432 05": {"mom": 8.0, "apr": 1547747.0, "rr": 1671837.0}, "บางกอก เรสเตอรอง กรุ๊ป": {"mom": -4.0, "apr": 1152727.0, "rr": 1106063.0}, "เมเจอร์ โบว์ล กรุ้ป": {"mom": 12.7, "apr": 929304.0, "rr": 1047462.0}, "อิ่มทรัพย์ โกลบอล คูซีน": {"mom": null, "apr": 0, "rr": 0}, "บาร์เทลส": {"mom": 6.2, "apr": 659484.0, "rr": 700471.0}, "บางกอก ไซเซ ซากาบะ": {"mom": -9.2, "apr": 520871.0, "rr": 472940.0}, "เอบีพี คาเฟ": {"mom": -18.7, "apr": 357461.0, "rr": 290597.0}, "เดย์โทน่า เรสเตอรองต์ กรุ๊ป": {"mom": -3.1, "apr": 447973.0, "rr": 434102.0}, "พี ที อิมเป็กซ์": {"mom": 13.9, "apr": 483808.0, "rr": 551106.0}, "แอลเซเว่น เบฟเวอเรจ แอนด์ ฟู้ด": {"mom": -1.9, "apr": 412614.0, "rr": 404636.0}, "ฟู้ด ออนเนอร์": {"mom": -16.3, "apr": 311132.0, "rr": 260566.0}, "ดิ เอราวัณ กรุ๊ป": {"mom": -27.3, "apr": 353475.0, "rr": 256827.0}, "เจเอเอส แอสเซ็ท": {"mom": -42.1, "apr": 252509.0, "rr": 146325.0}, "ครัวอัปษร": {"mom": 1.5, "apr": 192974.0, "rr": 195838.0}, "ไวทัลลิตี้ ไทย อ๊อปโค": {"mom": 3.3, "apr": 234343.0, "rr": 242037.0}, "อรุโณเทล": {"mom": -8.2, "apr": 155557.0, "rr": 142804.0}, "ซีทูเอช": {"mom": -40.4, "apr": 234120.0, "rr": 139618.0}, "khaogroup": {"mom": -24.0, "apr": 230633.0, "rr": 175299.0}, "แอล เอ็น จี ฟู๊ด โปรดักส์": {"mom": 29.4, "apr": 153811.0, "rr": 199054.0}, "โวค อินเตอร์เนชั่นแนล": {"mom": 17.0, "apr": 157170.0, "rr": 183823.0}, "เอ็ม เทล แมเนจเม้นท์": {"mom": 0.2, "apr": 93824.0, "rr": 93999.0}, "หงเปา อีวี": {"mom": -2.1, "apr": 145196.0, "rr": 142156.0}, "หมอชิตแลนด์": {"mom": 0.1, "apr": 199581.0, "rr": 199852.0}, "มหาทรัพย์ ดีเวลลอปเม้นท์": {"mom": -40.6, "apr": 236304.0, "rr": 140367.0}, "วัน ออริจิ้น ฮอสพิทัลลิตี้": {"mom": 51.4, "apr": 73453.0, "rr": 111197.0}, "เดอะ เฟรช ฟู้ด": {"mom": 64.4, "apr": 64422.0, "rr": 105931.0}, "ฟู้ด ไลบรารี่": {"mom": -42.9, "apr": 143044.0, "rr": 81665.0}, "ชูก้าเรย์แบงค็อก": {"mom": 83.9, "apr": 59927.0, "rr": 110206.0}, "เดอะ เพรสทีจ ฮอซพิทาลิตี้": {"mom": -2.0, "apr": 140571.0, "rr": 137708.0}, "กะเพราช้างเผือกโภชนา คุณปรเมศวร์ parent": {"mom": null, "apr": 0, "rr": 0}, "อาหารปิ่นโต": {"mom": null, "apr": 0, "rr": 0}, "ปลูกผักเพราะรักแม่": {"mom": -46.9, "apr": 24623.0, "rr": 13083.0}, "ฟูด คิทเช่น": {"mom": -10.1, "apr": 3090868.0, "rr": 2777277.0}, "พาวิน เมคเกอร์ ฟู้ด": {"mom": null, "apr": 0, "rr": 0}, "เด็ดกะเพรา": {"mom": -3.8, "apr": 1399106.0, "rr": 1346578.0}, "ไซมิส เทสท์": {"mom": 20.5, "apr": 738501.0, "rr": 889932.0}, "เดอะ ช็อคโกแลต แฟคทอรี่": {"mom": 6.9, "apr": 542504.0, "rr": 579852.0}, "เปเปอร์เพลน โปรเจค": {"mom": -13.2, "apr": 536321.0, "rr": 465391.0}, "อัคร ฮอสพิแทลลิตี้": {"mom": -22.9, "apr": 632256.0, "rr": 487226.0}, "รีลิเกอร์ โฮลดิ้ง": {"mom": -5.4, "apr": 450291.0, "rr": 425778.0}, "ทีเจ เฟเวอร์ กรุ๊ป": {"mom": null, "apr": 0, "rr": 0}, "ไวน์คอนเน็คชั่น": {"mom": -13.3, "apr": 320379.0, "rr": 277916.0}, "มีทลิเชียส": {"mom": -28.6, "apr": 339251.0, "rr": 242095.0}, "บางกอกคลับ": {"mom": 43.3, "apr": 214616.0, "rr": 307555.0}, "pattaya marriott resort spa at jomtien beach": {"mom": -24.1, "apr": 296229.0, "rr": 224866.0}, "พีซ โอเรียนทัล ทีเฮ้าส์": {"mom": 17.8, "apr": 199243.0, "rr": 234779.0}, "โอเอสบี เฮ้าส์": {"mom": -19.1, "apr": 50477.0, "rr": 40834.0}, "ดิ เออเบิ้ลเอสเคป": {"mom": -22.1, "apr": 205919.0, "rr": 160476.0}, "อาร์เอสเอส แพชชั่น": {"mom": 2.9, "apr": 226014.0, "rr": 232493.0}, "คิทเช่นเมท": {"mom": -26.1, "apr": 207247.0, "rr": 153120.0}, "ห้างเซ็นทรัล ดีพาทเมนท์สโตร์": {"mom": 1.4, "apr": 97563.0, "rr": 98964.0}, "โรงแรมซินนามอน เรสซิเดนซ์": {"mom": -39.5, "apr": 178309.0, "rr": 107789.0}, "ออเดรย์ กรุ๊ป อินคอร์ปอเรชั่น": {"mom": null, "apr": 0, "rr": 0}, "รักการกิน": {"mom": -4.9, "apr": 157567.0, "rr": 149877.0}, "บลูโกลด์ คอฟฟี่": {"mom": -33.8, "apr": 154384.0, "rr": 102275.0}};
+const _GMV_MANUAL_MAP = {"รวยปังปัง": "รวยปังปัง", "hma": "hospitality management asia hma", "ปิโตรเลียมไทย": "ปิโตรเลียมไทยคอร์ปอเรชั่น", "ปตท น้ำมัน upcountry": "ปตท น้ำมันและการค้าปลีก upcountry", "ปตท น้ำมัน bkk": "ปตท น้ำมันและการค้าปลีก bkk", "lk group": "lk group", "ที ดับบลิว เอส ที กลุ่ม": "ที ดับบลิว เอส ที", "บางกอกเบียร์": "บางกอกเบียร์แอนด์เบเวอร์เรจ", "โบ ลาน": "โบ ลานและสโลนส์ อาหารฝรั่ง parent", "ร่วมอิสสระ": "ร่วมอิสสระ ดีเวล็อปเมนท์", "โซยู ฟู้ด": "โซยู ฟู้ด", "สมาร์ท ยูไนเต็ด": "สมาร์ท ยูไนเต็ด", "อมารี พัทยา": "อมารี พัทยา", "ข้าว โซ อิ กรุ๊ป": "ข้าว โซ อิ กรุ๊ป", "ฟูด คิทเช่น": "ฟูด คิทเช่น"};
+function getGMVMoM(name){
+  // If override data loaded, compute live from it
+  const src=window._gmvOverride||null;
+  if(src){
+    const n=_normName(name);
+    // exact match first
+    let r=src.find(x=>x.account_name===name);
+    // fuzzy match
+    if(!r)r=src.find(x=>_normName(x.account_name)===n);
+    if(!r){const mapped=_GMV_MANUAL_MAP[n];if(mapped)r=src.find(x=>_normName(x.account_name)===mapped);}
+    if(r&&r.Apr){return Math.round((r.runrate-r.Apr)/r.Apr*1000)/10;}
+    return null;
+  }
+  // Fall back to static embedded map
+  const n=_normName(name);
+  const mapped=_GMV_MANUAL_MAP[n];
+  const d=_GMV_NORM_MAP[mapped||n];
+  if(!d||d.mom===undefined)return null;
+  return d.mom;
+}
+function momBadge(mom){
+  if(mom===null||mom===undefined)return'<span style="font-size:11px;color:#c5c7d4;">—</span>';
+  const up=mom>=0;
+  const arrow=up?'▲':'▼';
+  const clr=up?'#00854d':'#e44258';
+  const bg2=up?'#e8f5e9':'#ffebee';
+  const str=(up?'+':'')+mom.toFixed(1)+'%';
+  return'<span style="display:inline-flex;align-items:center;gap:2px;font-size:11px;font-weight:600;padding:2px 6px;border-radius:4px;background:'+bg2+';color:'+clr+';">'+arrow+' '+str+'</span>';
+}
+
+
+// ══ GMV MODAL FUNCTIONS ══
+let _gmvModalChart = null;
+
+function openGMVModal(accountName) {
+  const data = (window._gmvOverride || GMV_EMBEDDED);
+  const r = data.find(d => d.account_name === accountName);
+  if (!r) return;
+
+  const mom = r.Apr ? ((r.runrate - r.Apr) / r.Apr * 100) : null;
+  const momStr = mom !== null ? (mom >= 0 ? '+' : '') + mom.toFixed(1) + '%' : '—';
+  const col = GMV_STAFF_COLORS[r.staff] || '#0073ea';
+
+  document.getElementById('gmv-modal-title').textContent = accountName;
+  document.getElementById('gmv-modal-sub').textContent = r.staff + (mom !== null ? '  |  MoM ' + momStr : '');
+
+  // Stats
+  const stats = [
+    { label: 'ม.ค.', val: fmt(r.Jan) },
+    { label: 'เม.ย.', val: fmt(r.Apr) },
+    { label: 'พ.ค. MTD', val: fmt(r.May), hi: true },
+    { label: 'Runrate', val: fmt(r.runrate), hi: true },
+  ];
+  document.getElementById('gmv-modal-stats').innerHTML = stats.map(s =>
+    `<div style="background:${s.hi?'#f0f4ff':'#f9fafb'};border-radius:8px;padding:10px 12px;border:0.5px solid #e0e3e9;">
+      <div style="font-size:10px;color:#676879;font-weight:500;text-transform:uppercase;">${s.label}</div>
+      <div style="font-size:17px;font-weight:700;color:${s.hi?'#0073ea':'#1d2026'};margin-top:3px;">${s.val}</div>
+    </div>`
+  ).join('');
+
+  // Weekly action
+  const action = getLatestAction(accountName);
+  const actionDiv = document.getElementById('gmv-modal-action');
+  if (action) {
+    actionDiv.style.display = 'block';
+    actionDiv.innerHTML = '<span style="font-size:11px;font-weight:600;color:#676879;text-transform:uppercase;letter-spacing:.04em;">Weekly Action ล่าสุด</span><br>' + action;
+  } else {
+    actionDiv.style.display = 'none';
+  }
+
+  // Chart
+  const canvas = document.getElementById('gmv-modal-chart');
+  if (_gmvModalChart) { _gmvModalChart.destroy(); _gmvModalChart = null; }
+  const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค. MTD', 'RR'];
+  const vals = [r.Jan, r.Feb, r.Mar, r.Apr, r.May, r.runrate].map(v => v || 0);
+  const bgColors = vals.map((v, i) => {
+    if (i === 5) return col + '33';
+    if (i >= 4) return col + '99';
+    return col + 'cc';
+  });
+  _gmvModalChart = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: months,
+      datasets: [{
+        label: 'GMV',
+        data: vals,
+        backgroundColor: bgColors,
+        borderColor: col,
+        borderWidth: 1.5,
+        borderRadius: 5,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => fmt(ctx.parsed.y) } }
+      },
+      scales: {
+        x: { ticks: { font: { size: 12 } } },
+        y: { ticks: { font: { size: 11 }, callback: v => fmt(v) }, grid: { color: 'rgba(0,0,0,.06)' } }
+      }
+    }
+  });
+
+  const bg = document.getElementById('gmv-modal-bg');
+  bg.style.display = 'flex';
+}
+
+function closeGMVModal(e) {
+  if (e && e.target !== document.getElementById('gmv-modal-bg')) return;
+  document.getElementById('gmv-modal-bg').style.display = 'none';
+  if (_gmvModalChart) { _gmvModalChart.destroy(); _gmvModalChart = null; }
+}
+
+// ── Declining list modal ──
+const _miniCharts = {};
+
+function openGMVListModal(mode) {
+  const data = (window._gmvOverride || GMV_EMBEDDED).filter(r => {
+    if (gmvStaffFilter !== 'all' && r.staff !== gmvStaffFilter) return false;
+    const m = momPct(r.Apr, r.runrate);
+    if (mode === 'declining') return m !== null && m < 0;
+    if (mode === 'no_action') return m !== null && m < 0 && !getLatestAction(r.account_name);
+    return false;
+  });
+  data.sort((a, b) => (momPct(a.Apr, a.runrate) || 0) - (momPct(b.Apr, b.runrate) || 0));
+
+  const title = mode === 'declining'
+    ? '📉 ร้านที่ยอดลด (' + data.length + ' accounts)'
+    : '⚠️ ยอดลด + ยังไม่มี Action (' + data.length + ' accounts)';
+  document.getElementById('gmv-list-modal-title').textContent = title;
+
+  // Destroy old mini charts
+  Object.values(_miniCharts).forEach(c => { try { c.destroy(); } catch(e){} });
+  for (const k in _miniCharts) delete _miniCharts[k];
+
+  document.getElementById('gmv-list-modal-body').innerHTML = data.map((r, i) => {
+    const mom = momPct(r.Apr, r.runrate);
+    const momStr = mom !== null ? (mom >= 0 ? '+' : '') + mom.toFixed(1) + '%' : '—';
+    const col = GMV_STAFF_COLORS[r.staff] || '#e44258';
+    const action = getLatestAction(r.account_name);
+    const cid = 'mini-chart-' + i;
+    const acctEsc = r.account_name.replace(/"/g,'&quot;');
+    return '<div class="gmv-mini-card" data-acct="'+acctEsc+'" style="background:#fff;border:1px solid #e0e3e9;border-radius:10px;padding:12px;cursor:pointer;">'
+      +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">'
+      +'<span style="width:8px;height:8px;border-radius:50%;background:'+col+';flex-shrink:0;"></span>'
+      +'<span style="font-size:12px;font-weight:600;color:#1d2026;flex:1;line-height:1.3;">'+r.account_name+'</span>'
+      +'</div>'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">'
+      +'<span style="font-size:11px;color:#676879;">'+r.staff+'</span>'
+      +'<span style="font-size:12px;font-weight:700;color:#e44258;">'+momStr+'</span>'
+      +'</div>'
+      +'<div style="display:flex;gap:8px;margin-bottom:8px;">'
+      +'<div style="flex:1;text-align:center;background:#f9fafb;border-radius:5px;padding:4px;">'
+      +'<div style="font-size:9px;color:#999;">เม.ย.</div>'
+      +'<div style="font-size:12px;font-weight:600;">'+fmt(r.Apr)+'</div>'
+      +'</div>'
+      +'<div style="flex:1;text-align:center;background:#fff3f3;border-radius:5px;padding:4px;">'
+      +'<div style="font-size:9px;color:#999;">RR พ.ค.</div>'
+      +'<div style="font-size:12px;font-weight:600;color:#e44258;">'+fmt(r.runrate)+'</div>'
+      +'</div>'
+      +'</div>'
+      +'<div style="position:relative;height:70px;"><canvas id="'+cid+'"></canvas></div>'
+      +(action
+        ? '<div style="margin-top:6px;font-size:10px;color:#0060c0;background:#e8f0fe;border-radius:4px;padding:4px 6px;line-height:1.4;">✓ '+action.substring(0,60)+(action.length>60?'…':'')+'</div>'
+        : '<div style="margin-top:6px;font-size:10px;color:#c62828;background:#ffebee;border-radius:4px;padding:4px 6px;">⚠ ยังไม่มี weekly action</div>')
+      +'</div>';
+  }).join('');
+  // Attach click: close list modal then open account modal
+  document.querySelectorAll('.gmv-mini-card').forEach(function(el){
+    el.onclick=function(){
+      const name=el.getAttribute('data-acct');
+      closeGMVListModal();
+      setTimeout(function(){openGMVModal(name);},100);
+    };
+  });
+
+  document.getElementById('gmv-list-modal-bg').style.display = 'flex';
+
+  // Draw mini charts after render
+  setTimeout(() => {
+    data.forEach((r, i) => {
+      const canvas = document.getElementById('mini-chart-' + i);
+      if (!canvas) return;
+      const col = GMV_STAFF_COLORS[r.staff] || '#e44258';
+      const vals = [r.Jan, r.Feb, r.Mar, r.Apr, r.runrate].map(v => v || 0);
+      _miniCharts[i] = new Chart(canvas, {
+        type: 'line',
+        data: {
+          labels: ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','RR'],
+          datasets: [{
+            data: vals,
+            borderColor: col,
+            backgroundColor: col + '22',
+            borderWidth: 2,
+            pointRadius: 3,
+            fill: true,
+            tension: 0.3,
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => fmt(ctx.parsed.y) } } },
+          scales: {
+            x: { ticks: { font: { size: 9 } }, grid: { display: false } },
+            y: { display: false }
+          }
+        }
+      });
+    });
+  }, 50);
+}
+
+function closeGMVListModal(e) {
+  if (e && e.target !== document.getElementById('gmv-list-modal-bg')) return;
+  document.getElementById('gmv-list-modal-bg').style.display = 'none';
+  Object.values(_miniCharts).forEach(c => { try { c.destroy(); } catch(e){} });
+  for (const k in _miniCharts) delete _miniCharts[k];
+}
+
+// Close modals on Escape key
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeGMVModal();
+    closeGMVListModal();
+  }
+});
+
+
+// ══ PROGRESS REASON MODAL ══
+const PR_REASONS = [
+  {key:'price',   label:'💰 ราคา',    desc:'ราคาสู้ไม่ได้'},
+  {key:'quality', label:'⭐ Quality', desc:'คุณภาพไม่ผ่าน'},
+  {key:'spec',    label:'📋 Spec',    desc:'ไม่ตรง Spec'},
+  {key:'other',   label:'💬 อื่นๆ',   desc:'เหตุผลอื่น'},
+];
+let _prModalKey = null;
+let _prModalSel = null;
+
+function openPRModal(rowKey, selEl) {
+  _prModalKey = rowKey;
+  _prModalSel = selEl;
+  // Get current reason if exists
+  const wd = weekData();
+  const current = (wd[rowKey]||{}).progress||'';
+  const currentReason = current.includes('|') ? current.split('|')[1] : '';
+
+  document.getElementById('pr-buttons').innerHTML = PR_REASONS.map(r =>
+    '<button class="pr-btn'+(currentReason===r.key?' sel':'')+'" onclick="selectPRReason(\''+r.key+'\')">'
+    +'<div style="font-size:16px;margin-bottom:4px;">'+r.label.split(' ')[0]+'</div>'
+    +'<div style="font-size:12px;font-weight:600;">'+r.label.split(' ').slice(1).join(' ')+'</div>'
+    +'<div style="font-size:10px;color:#999;margin-top:2px;">'+r.desc+'</div>'
+    +'</button>'
+  ).join('');
+
+  document.getElementById('prog-reason-bg').style.display='flex';
+}
+
+function selectPRReason(reason) {
+  if(!_prModalKey) return;
+  const val = 'ไม่ได้|'+reason;
+  const wd = weekData();
+  const current = wd[_prModalKey]||{};
+  saveWeekData(activeWeekId, _prModalKey, {...current, progress:val});
+  // Update dot color
+  const dot = document.querySelector('[data-pi="'+_prModalKey+'"]');
+  if(dot) dot.style.background = PROG_COLOR['ไม่ได้']||'#e44258';
+  updateWeekStats();
+  closePRModal();
+  render();
+}
+
+function closePRModal(e) {
+  if(e && e.target !== document.getElementById('prog-reason-bg')) return;
+  // If cancelled without selecting, revert select to previous value
+  if(_prModalSel) {
+    const wd = weekData();
+    const current = (wd[_prModalKey]||{}).progress||'';
+    _prModalSel.value = current.split('|')[0] || '';
+  }
+  document.getElementById('prog-reason-bg').style.display='none';
+  _prModalKey=null; _prModalSel=null;
+}
+
+
+// Debounced cell save (prevents re-render while typing)
+const _debounceTmr={};
+function debounceSave(el,field){
+  const k=el.dataset.k||el.dataset.field||field;
+  const id='db_'+k+'_'+field;
+  clearTimeout(_debounceTmr[id]);
+  // Update class immediately (visual feedback)
+  if(field==='update')el.classList.toggle('has-update',!!el.value);
+  if(field==='sku')el.classList.toggle('has-sku',!!el.value);
+  _debounceTmr[id]=setTimeout(()=>{
+    saveCellData(el,field);
+  },1500);
+}
+
+
+// ══ RESIZABLE COLUMNS (CSS vars) ══
+(function(){
+  let drag=null,startX=0,startW=0,col='';
+  document.addEventListener('mousedown',function(e){
+    const h=e.target.closest('.rhandle');
+    if(!h)return;
+    drag=h; col=h.dataset.col;
+    const root=document.documentElement;
+    startW=parseInt(getComputedStyle(root).getPropertyValue('--w-'+col))||240;
+    startX=e.clientX;
+    document.body.style.cursor='col-resize';
+    document.body.style.userSelect='none';
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove',function(e){
+    if(!drag)return;
+    const w=Math.max(80,startW+(e.clientX-startX));
+    document.documentElement.style.setProperty('--w-'+col,w+'px');
+  });
+  document.addEventListener('mouseup',function(){
+    if(!drag)return;
+    drag=null;
+    document.body.style.cursor='';
+    document.body.style.userSelect='';
+  });
+})();
+
+// ══════════════════════════════
+// ACTION ITEMS & OPTY CARDS
+// ══════════════════════════════
+let actionItemsCache={};
+let optyCardsCache={};
+let _aiModalRK='';
+let _optyModalRK='';
+
+const AI_TYPE_CSS={'ขาย/Nego':'ai-type-sell','เคส':'ai-type-case','เปิดร้านใหม่':'ai-type-newshop','หนี้/Finance':'ai-type-debt','อื่นๆ':'ai-type-other'};
+const AI_STATUS_CSS={'กำลังดำเนินการ':'ai-st-doing','รอผล':'ai-st-wait','ได้แล้ว':'ai-st-done','ยกเลิก':'ai-st-cancel'};
+
+function aiTypeBadge(t){return`<span class="ai-type ${AI_TYPE_CSS[t]||'ai-type-other'}">${t}</span>`;}
+function aiStBadge(s){return`<span class="ai-st ${AI_STATUS_CSS[s]||'ai-st-cancel'}">${s}</span>`;}
+
+function buildAIBadge(rk){
+  const items=actionItemsCache[rk]||[];
+  const active=items.filter(i=>i.status==='กำลังดำเนินการ'||i.status==='รอผล').length;
+  const label=items.length===0?'+ action item':active?`🔄 ${active} active`:`✓ ${items.length} items`;
+  return`<button class="ai-manage-btn" style="font-size:11px;margin-top:4px;" data-rk="${rk.replace(/"/g,'&quot;')}" onclick="openAIModal(this.dataset.rk)">${label}</button>`;
+}
+function buildActionItemsCell(rk){
+  const items=actionItemsCache[rk]||[];
+  let html='';
+  if(items.length){
+    html+='<div class="ai-wrap">';
+    items.slice(0,4).forEach(it=>{
+      html+=`<div class="ai-row">${aiTypeBadge(it.type)}<span class="ai-name-sm">${it.name}</span>${aiStBadge(it.status)}</div>`;
+    });
+    if(items.length>4)html+=`<span style="font-size:10px;color:#9e9e9e;padding-left:2px;">+${items.length-4} อีก...</span>`;
+    html+='</div>';
+  }
+  const label=items.length?`✏️ จัดการ (${items.length})`:'+ เพิ่ม action item';
+  html+=`<button class="ai-manage-btn" data-rk="${rk.replace(/"/g,'&quot;')}" onclick="openAIModal(this.dataset.rk)">${label}</button>`;
+  return html;
+}
+
+function buildOptyFlag(rk){
+  const cards=optyCardsCache[rk]||[];
+  const open=cards.filter(c=>c.status==='open').length;
+  const cls=open?'opty-flag':'opty-flag opty-flag-empty';
+  const label=open?`🔶 ${open}`:'🔶';
+  return`<span class="${cls}" data-rk="${rk.replace(/"/g,'&quot;')}" onclick="event.stopPropagation();openOptyModal(this.dataset.rk)" title="${open?open+' open opty card':'เพิ่ม Opty Card'}">${label}</span>`;
+}
+
+// ── Action Items Modal ──
+function openAIModal(rk){
+  _aiModalRK=rk;
+  document.getElementById('ai-modal-title').textContent='Action Items — '+(rk.split('||')[1]||rk);
+  renderAIList();
+  document.getElementById('ai-new-type').value='ขาย/Nego';
+  document.getElementById('ai-sku-field').style.display='block';
+  document.getElementById('ai-modal-bg').style.display='flex';
+}
+function closeAIModal(e){
+  if(e&&e.target!==document.getElementById('ai-modal-bg'))return;
+  document.getElementById('ai-modal-bg').style.display='none';
+  document.getElementById('ai-new-name').value='';
+  document.getElementById('ai-new-sku').value='';
+}
+function renderAIList(){
+  const items=actionItemsCache[_aiModalRK]||[];
+  const el=document.getElementById('ai-modal-list');
+  if(!items.length){el.innerHTML='<div style="font-size:13px;color:#c5c7d4;text-align:center;padding:12px 0;">ยังไม่มี action items</div>';return;}
+  el.innerHTML=items.map(it=>`
+    <div class="fk-item-card">
+      <div class="fk-item-info">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">${aiTypeBadge(it.type)}${aiStBadge(it.status)}</div>
+        <div style="font-size:13px;color:#1d2026;line-height:1.4;">${it.name}</div>
+        ${it.sku?`<div style="font-size:11px;color:#0060c0;margin-top:3px;">SKU: ${it.sku}</div>`:''}
+      </div>
+      <select style="font-size:12px;padding:4px 6px;border-radius:5px;border:1px solid #e0e3e9;background:#fff;font-family:'Figtree',sans-serif;align-self:flex-start;" onchange="updateAIStatus('${it.id}',this.value)">
+        ${['กำลังดำเนินการ','รอผล','ได้แล้ว','ยกเลิก'].map(s=>`<option${s===it.status?' selected':''}>${s}</option>`).join('')}
+      </select>
+      <button class="fk-del-btn" onclick="deleteAIItem('${it.id}')">×</button>
+    </div>`).join('');
+}
+async function saveNewAI(){
+  const type=document.getElementById('ai-new-type').value;
+  const name=document.getElementById('ai-new-name').value.trim();
+  const status=document.getElementById('ai-new-status').value;
+  const sku=document.getElementById('ai-new-sku').value.trim();
+  if(!name){alert('กรุณาใส่รายละเอียด');return;}
+  const item={id:'ai-'+Date.now(),row_key:_aiModalRK,type,name,status,sku};
+  showSyncing();
+  try{
+    await sbUpsert('fk_action_items',item);
+    if(!actionItemsCache[_aiModalRK])actionItemsCache[_aiModalRK]=[];
+    actionItemsCache[_aiModalRK].push(item);
+    document.getElementById('ai-new-name').value='';
+    document.getElementById('ai-new-sku').value='';
+    renderAIList();render();
+    showSynced();
+  }catch(e){showSyncErr();console.error(e);}
+}
+async function updateAIStatus(id,status){
+  let found=null;
+  for(const rk of Object.keys(actionItemsCache)){const it=actionItemsCache[rk].find(i=>i.id===id);if(it){found=it;break;}}
+  if(!found)return;
+  found.status=status;showSyncing();
+  try{await sbUpsert('fk_action_items',found);renderAIList();render();showSynced();}
+  catch(e){showSyncErr();console.error(e);}
+}
+async function deleteAIItem(id){
+  if(!confirm('ลบ action item นี้?'))return;
+  showSyncing();
+  try{
+    await sbDelete('fk_action_items',id);
+    for(const rk of Object.keys(actionItemsCache))actionItemsCache[rk]=actionItemsCache[rk].filter(i=>i.id!==id);
+    renderAIList();render();showSynced();
+  }catch(e){showSyncErr();console.error(e);}
+}
+
+// ── Opty Cards Modal ──
+function openOptyModal(rk){
+  _optyModalRK=rk;
+  document.getElementById('opty-modal-title').textContent='Opty Cards — '+(rk.split('||')[1]||rk);
+  renderOptyList();
+  document.getElementById('opty-modal-bg').style.display='flex';
+}
+function closeOptyModal(e){
+  if(e&&e.target!==document.getElementById('opty-modal-bg'))return;
+  document.getElementById('opty-modal-bg').style.display='none';
+  ['opty-new-title','opty-new-category','opty-new-value','opty-new-deadline','opty-new-note'].forEach(id=>document.getElementById(id).value='');
+}
+function renderOptyList(){
+  const cards=optyCardsCache[_optyModalRK]||[];
+  const el=document.getElementById('opty-modal-list');
+  if(!cards.length){el.innerHTML='<div style="font-size:13px;color:#c5c7d4;text-align:center;padding:12px 0;">ยังไม่มี opty cards</div>';return;}
+  el.innerHTML=cards.map(c=>`
+    <div class="fk-item-card" style="flex-direction:column;gap:6px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:13px;font-weight:600;color:#1d2026;">${c.title}</span>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <select style="font-size:12px;padding:3px 6px;border-radius:5px;border:1px solid #e0e3e9;background:#fff;font-family:'Figtree',sans-serif;" onchange="updateOptyStatus('${c.id}',this.value)">
+            <option${c.status==='open'?' selected':''} value="open">Open</option>
+            <option${c.status==='closed'?' selected':''} value="closed">Closed</option>
+          </select>
+          <button class="fk-del-btn" onclick="deleteOptyCard('${c.id}')">×</button>
+        </div>
+      </div>
+      <div class="opty-card-meta">
+        ${c.category?`<span>📂 ${c.category}</span>`:''}
+        ${c.value?`<span>💰 ฿${Number(c.value).toLocaleString()}/เดือน</span>`:''}
+        ${c.deadline?`<span>📅 ${c.deadline}</span>`:''}
+        <span class="${c.status==='open'?'opty-st-open':'opty-st-closed'}">${c.status==='open'?'● Open':'✓ Closed'}</span>
+      </div>
+      ${c.note?`<div style="font-size:11px;color:#676879;">${c.note}</div>`:''}
+    </div>`).join('');
+}
+async function saveNewOpty(){
+  const title=document.getElementById('opty-new-title').value.trim();
+  const category=document.getElementById('opty-new-category').value.trim();
+  const value=parseFloat(document.getElementById('opty-new-value').value)||0;
+  const deadline=document.getElementById('opty-new-deadline').value;
+  const note=document.getElementById('opty-new-note').value.trim();
+  const status=document.getElementById('opty-new-status').value;
+  if(!title){alert('กรุณาใส่ชื่อ opportunity');return;}
+  const card={id:'opty-'+Date.now(),row_key:_optyModalRK,title,category,value,deadline:deadline||null,note,status};
+  showSyncing();
+  try{
+    await sbUpsert('fk_opty_cards',card);
+    if(!optyCardsCache[_optyModalRK])optyCardsCache[_optyModalRK]=[];
+    optyCardsCache[_optyModalRK].push(card);
+    ['opty-new-title','opty-new-category','opty-new-value','opty-new-deadline','opty-new-note'].forEach(id=>document.getElementById(id).value='');
+    renderOptyList();render();renderHistory();
+    showSynced();
+  }catch(e){showSyncErr();console.error(e);}
+}
+async function updateOptyStatus(id,status){
+  let found=null;
+  for(const rk of Object.keys(optyCardsCache)){const c=optyCardsCache[rk].find(c=>c.id===id);if(c){found=c;break;}}
+  if(!found)return;
+  found.status=status;showSyncing();
+  try{await sbUpsert('fk_opty_cards',found);renderOptyList();render();renderHistory();showSynced();}
+  catch(e){showSyncErr();console.error(e);}
+}
+async function deleteOptyCard(id){
+  if(!confirm('ลบ opty card นี้?'))return;
+  showSyncing();
+  try{
+    await sbDelete('fk_opty_cards',id);
+    for(const rk of Object.keys(optyCardsCache))optyCardsCache[rk]=optyCardsCache[rk].filter(c=>c.id!==id);
+    renderOptyList();render();renderHistory();showSynced();
+  }catch(e){showSyncErr();console.error(e);}
+}
+
+document.getElementById('srch').addEventListener('input',()=>render());
+loadAll().then(()=>{
+  renderWeekSelect();renderWeekPicker();render();
+  // Restore GMV override from localStorage if available
+  try{
+    const saved=localStorage.getItem('fk_gmv_override');
+    const savedSrc=localStorage.getItem('fk_gmv_override_src');
+    if(saved){
+      window._gmvOverride=JSON.parse(saved);
+      document.getElementById('gmv-data-source').textContent='📊 '+( savedSrc||'ข้อมูลที่บันทึกไว้');
+    } else {
+      document.getElementById('gmv-data-source').textContent='📊 ข้อมูล Embedded (Q2 2026)';
+    }
+  }catch(e){document.getElementById('gmv-data-source').textContent='📊 ข้อมูล Embedded (Q2 2026)';}
+});
+</script>
+
+<!-- GMV Account Chart Modal -->
+<div id="gmv-modal-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9998;align-items:center;justify-content:center;" onclick="closeGMVModal(event)">
+  <div style="background:#fff;border-radius:14px;padding:24px;width:700px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 12px 48px rgba(0,0,0,.2);" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div>
+        <div id="gmv-modal-title" style="font-size:15px;font-weight:700;color:#1d2026;"></div>
+        <div id="gmv-modal-sub" style="font-size:12px;color:#676879;margin-top:2px;"></div>
+      </div>
+      <button onclick="closeGMVModal()" style="background:#f4f5f7;border:none;border-radius:6px;width:32px;height:32px;font-size:18px;cursor:pointer;color:#676879;display:flex;align-items:center;justify-content:center;">×</button>
+    </div>
+    <div style="position:relative;height:260px;margin-bottom:20px;">
+      <canvas id="gmv-modal-chart"></canvas>
+    </div>
+    <div id="gmv-modal-stats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;"></div>
+    <div id="gmv-modal-action" style="background:#f4f5f7;border-radius:8px;padding:12px;font-size:12px;color:#1d2026;line-height:1.6;display:none;"></div>
+  </div>
+</div>
+
+<!-- GMV Declining List Modal -->
+<div id="gmv-list-modal-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9998;align-items:center;justify-content:center;" onclick="closeGMVListModal(event)">
+  <div style="background:#fff;border-radius:14px;padding:24px;width:860px;max-width:96vw;max-height:90vh;overflow-y:auto;box-shadow:0 12px 48px rgba(0,0,0,.2);" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div id="gmv-list-modal-title" style="font-size:15px;font-weight:700;color:#1d2026;"></div>
+      <button onclick="closeGMVListModal()" style="background:#f4f5f7;border:none;border-radius:6px;width:32px;height:32px;font-size:18px;cursor:pointer;color:#676879;display:flex;align-items:center;justify-content:center;">×</button>
+    </div>
+    <div id="gmv-list-modal-body" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;"></div>
+  </div>
+</div>
+
+<!-- Action Items Modal -->
+<div id="ai-modal-bg" class="fk-modal-bg" style="display:none;" onclick="closeAIModal(event)">
+  <div class="fk-modal-box" onclick="event.stopPropagation()">
+    <div class="fk-modal-header">
+      <span class="fk-modal-title" id="ai-modal-title">Action Items</span>
+      <button class="fk-modal-close" onclick="closeAIModal()">×</button>
+    </div>
+    <div id="ai-modal-list" style="margin-bottom:12px;"></div>
+    <div class="fk-add-form">
+      <div style="font-size:12px;font-weight:600;color:#676879;margin-bottom:10px;">+ เพิ่ม Action Item ใหม่</div>
+      <div class="fk-form-grid">
+        <div>
+          <label>Type</label>
+          <select id="ai-new-type" onchange="document.getElementById('ai-sku-field').style.display=this.value==='ขาย/Nego'?'block':'none'">
+            <option>ขาย/Nego</option>
+            <option>เคส</option>
+            <option>เปิดร้านใหม่</option>
+            <option>หนี้/Finance</option>
+            <option>อื่นๆ</option>
+          </select>
+        </div>
+        <div>
+          <label>Status</label>
+          <select id="ai-new-status">
+            <option>กำลังดำเนินการ</option>
+            <option>รอผล</option>
+            <option>ได้แล้ว</option>
+            <option>ยกเลิก</option>
+          </select>
+        </div>
+      </div>
+      <div class="fk-form-row">
+        <label>รายละเอียด</label>
+        <input id="ai-new-name" type="text" placeholder="อธิบาย action item..." />
+      </div>
+      <div class="fk-form-row" id="ai-sku-field">
+        <label>SKU / Category (optional)</label>
+        <input id="ai-new-sku" type="text" placeholder="SKU / Category..." />
+      </div>
+      <div style="display:flex;justify-content:flex-end;">
+        <button class="btn btn-primary" onclick="saveNewAI()">+ เพิ่ม</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Opty Cards Modal -->
+<div id="opty-modal-bg" class="fk-modal-bg" style="display:none;" onclick="closeOptyModal(event)">
+  <div class="fk-modal-box" style="width:560px;" onclick="event.stopPropagation()">
+    <div class="fk-modal-header">
+      <span class="fk-modal-title" id="opty-modal-title">Opty Cards</span>
+      <button class="fk-modal-close" onclick="closeOptyModal()">×</button>
+    </div>
+    <div id="opty-modal-list" style="margin-bottom:12px;"></div>
+    <div class="fk-add-form">
+      <div style="font-size:12px;font-weight:600;color:#676879;margin-bottom:10px;">+ เพิ่ม Opty Card ใหม่</div>
+      <div class="fk-form-row">
+        <label>ชื่อ Opportunity</label>
+        <input id="opty-new-title" type="text" placeholder="เช่น เพิ่มออเดอร์ผัก, เปิดสาขาใหม่..." />
+      </div>
+      <div class="fk-form-grid">
+        <div>
+          <label>Category</label>
+          <input id="opty-new-category" type="text" placeholder="เช่น SKU expansion..." />
+        </div>
+        <div>
+          <label>มูลค่า (฿/เดือน)</label>
+          <input id="opty-new-value" type="number" placeholder="0" />
+        </div>
+      </div>
+      <div class="fk-form-grid">
+        <div>
+          <label>Deadline</label>
+          <input id="opty-new-deadline" type="date" />
+        </div>
+        <div>
+          <label>Status</label>
+          <select id="opty-new-status">
+            <option value="open">Open</option>
+            <option value="closed">Closed</option>
+          </select>
+        </div>
+      </div>
+      <div class="fk-form-row">
+        <label>Note</label>
+        <textarea id="opty-new-note" rows="2" placeholder="รายละเอียดเพิ่มเติม..."></textarea>
+      </div>
+      <div style="display:flex;justify-content:flex-end;">
+        <button class="btn btn-primary" onclick="saveNewOpty()">+ เพิ่ม</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Progress Reason Modal -->
+<div id="prog-reason-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:9999;align-items:center;justify-content:center;" onclick="closePRModal(event)">
+  <div style="background:#fff;border-radius:12px;padding:24px;width:360px;box-shadow:0 8px 40px rgba(0,0,0,.18);" onclick="event.stopPropagation()">
+    <div style="font-size:15px;font-weight:700;color:#1d2026;margin-bottom:6px;">❌ ไม่ได้ — เหตุผล</div>
+    <div style="font-size:13px;color:#676879;margin-bottom:16px;">เลือกเหตุผลหลักที่ไม่ได้</div>
+    <div id="pr-buttons" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button onclick="closePRModal()" style="padding:7px 16px;border-radius:6px;border:1px solid #e0e3e9;background:#f4f5f7;font-size:13px;cursor:pointer;color:#676879;">ยกเลิก</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
