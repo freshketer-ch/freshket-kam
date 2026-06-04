@@ -433,13 +433,17 @@ html,body{height:100%;font-family:'Figtree',sans-serif;font-size:14px;background
       <option value="has_update">มีอัพเดทอย่างน้อย 1 วีค</option>
       <option value="no_update">ยังไม่มีอัพเดทเลย</option>
     </select>
-    <select class="filter-sel" id="hv-prog-filter" onchange="renderHistory()">
-      <option value="">Progress: ทั้งหมด</option>
-      <option value="ยังไม่เริ่ม">ยังไม่เริ่ม</option>
+    <select class="filter-sel" id="hv-ai-filter" onchange="renderHistory()">
+      <option value="">Action Items: ทั้งหมด</option>
+      <option value="has_ai">มี action items</option>
       <option value="กำลังดำเนินการ">กำลังดำเนินการ</option>
       <option value="รอผล">รอผล</option>
-      <option value="ได้แล้ว">ได้แล้ว</option>
-      <option value="ไม่ได้">ไม่ได้</option>
+      <option value="ได้แล้ว">สำเร็จแล้ว</option>
+    </select>
+    <select class="filter-sel" id="hv-opty-filter" onchange="renderHistory()">
+      <option value="">Opty Cards: ทั้งหมด</option>
+      <option value="has_open">มี Opty Card Open</option>
+      <option value="no_opty">ไม่มี Opty Card</option>
     </select>
     <span class="hv-info" id="hv-count">— accounts</span>
   </div>
@@ -1069,8 +1073,12 @@ function renderHistory(){
   if(q){const ql=q.toLowerCase();data=data.filter(r=>r[1].toLowerCase().includes(ql)||r[0].toLowerCase().includes(ql));}
   if(filt==='has_update')data=data.filter(r=>weeks.some(w=>{const rd=(weekDataCache[w.id]||{})[rowKey(r)]||{};return rd.update||rd.sku||rd.progress;}));
   if(filt==='no_update')data=data.filter(r=>!weeks.some(w=>{const rd=(weekDataCache[w.id]||{})[rowKey(r)]||{};return rd.update||rd.sku||rd.progress;}));
-  const progFilt=(document.getElementById('hv-prog-filter')||{}).value||'';
-  if(progFilt)data=data.filter(r=>weeks.some(w=>{const p=((weekDataCache[w.id]||{})[rowKey(r)]||{}).progress||'';return p.split('|')[0]===progFilt;}));
+  const aiFilt=(document.getElementById('hv-ai-filter')||{}).value||'';
+  if(aiFilt==='has_ai')data=data.filter(r=>(actionItemsCache[rowKey(r)]||[]).length>0);
+  else if(aiFilt)data=data.filter(r=>(actionItemsCache[rowKey(r)]||[]).some(i=>i.status===aiFilt));
+  const optyFilt=(document.getElementById('hv-opty-filter')||{}).value||'';
+  if(optyFilt==='has_open')data=data.filter(r=>(optyCardsCache[rowKey(r)]||[]).some(c=>c.status==='open'));
+  else if(optyFilt==='no_opty')data=data.filter(r=>!(optyCardsCache[rowKey(r)]||[]).length);
   document.getElementById('hv-count').textContent=`${data.length} accounts`;
   if(!visWeeks.length){document.getElementById('hv-thead').innerHTML='<tr><th class="hv-th-info">Account</th><th class="hv-th-info" colspan="10" style="text-align:center;color:#c5c7d4;font-style:italic;">เลือกสัปดาห์ที่ต้องการดูด้านบน</th></tr>';document.getElementById('hv-tbody').innerHTML='';return;}
   const GC_HV={Dent:'#0073ea',BB:'#9f5cf6',Ning:'#00854d',Tos:'#d4831a',Kwang:'#e44258',Mild:'#5cb85c',Nitcha:'#0891b2'};
