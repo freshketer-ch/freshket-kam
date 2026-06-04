@@ -389,7 +389,7 @@ html,body{height:100%;font-family:'Figtree',sans-serif;font-size:14px;background
     <div class="ch w-pri">Priority</div>
     <div class="ch w-diff">Difficulty</div>
     <div class="ch w-note">KA Insight</div>
-    <div class="ch w-prog">Progress / Actions</div>
+    <div class="ch w-prog">Actions</div>
     <div class="ch" id="ch-upd" style="width:var(--w-upd);">Weekly Update<span class="rhandle" data-col="upd" onclick="event.stopPropagation()"></span></div>
     <div class="ch sort" id="ch-mom" style="width:var(--w-mom);" onclick="sortBy('mom')">MoM% <span style="font-size:10px;opacity:.5;margin-left:3px;">↕</span><span class="rhandle" data-col="mom" onclick="event.stopPropagation()"></span></div>
   </div>
@@ -935,7 +935,7 @@ function render(){
               :`<span style="font-size:12px;color:#676879;line-height:1.5">${getField(r,6)||'—'}</span>`
             }
           </div>
-          <div class="cell w-prog" style="flex-direction:column;align-items:flex-start;justify-content:flex-start;padding:6px 8px;"><div class="prog-wrap" style="width:100%;margin-bottom:4px;"><div class="prog-dot" style="background:${pdot}" data-pi="${k}"></div><select class="prog-sel" data-k="${k}" onchange="saveProg(this)">${progOpts}</select>${progReasonBadge}</div>${buildAIBadge(k)}</div>
+          <div class="cell w-prog" style="padding:6px 8px;">${buildAIBadge(k)}</div>
           <div class="cell cell-upd"><textarea rows="2" placeholder="อัพเดทสัปดาห์นี้..." class="${upd?'has-update':''}" data-k="${k}" data-field="update" oninput="debounceSave(this,'update')" onblur="saveCellData(this,'update')">${upd}</textarea></div>
           <div class="cell w-mom" style="justify-content:center;">${momBadge(getGMVMoM(r[1]))}</div>
         </div>`;
