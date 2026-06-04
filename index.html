@@ -87,10 +87,10 @@ html,body{height:100%;font-family:'Figtree',sans-serif;font-size:14px;background
 .cell input[type=checkbox]{cursor:pointer;accent-color:#0073ea;width:15px;height:15px;}
 .acct-name{font-size:13px;font-weight:500;line-height:1.4;color:#1d2026;}
 .acct-note{font-size:11px;color:#676879;line-height:1.4;margin-top:2px;}
-.cell-upd{width:240px;padding:4px 8px;flex-shrink:0;}
-.cell-upd textarea{width:100%;border:none;background:transparent;font-size:12px;color:#1d2026;font-family:'Figtree',sans-serif;resize:none;line-height:1.5;padding:4px;border-radius:4px;min-height:36px;}
-.cell-upd textarea:focus{outline:none;background:#f0f4ff;border:1px solid #0073ea;}
-.cell-upd textarea.has-update{background:#fff9e6;border:1px solid #f9c74f;}
+.cell-upd{width:240px;padding:6px 8px;flex-shrink:0;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:3px;overflow-y:auto;}
+.cell-upd-empty{font-size:11px;color:#c5c7d4;font-style:italic;}
+.hv-ai-row{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:2px;}
+.hv-ai-name{font-size:11px;color:#1d2026;}
 .cell-sku{width:160px;padding:4px 8px;}
 .cell-sku input{width:100%;border:none;background:transparent;font-size:12px;color:#1d2026;font-family:'Figtree',sans-serif;padding:6px 4px;border-radius:4px;}
 .cell-sku input:focus{outline:none;background:#f0f4ff;border:1px solid #0073ea;}
@@ -936,7 +936,7 @@ function render(){
             }
           </div>
           <div class="cell w-prog" style="padding:6px 8px;">${buildAIBadge(k)}</div>
-          <div class="cell cell-upd"><textarea rows="2" placeholder="อัพเดทสัปดาห์นี้..." class="${upd?'has-update':''}" data-k="${k}" data-field="update" oninput="debounceSave(this,'update')" onblur="saveCellData(this,'update')">${upd}</textarea></div>
+          <div class="cell cell-upd">${buildWeekUpdCell(k)}</div>
           <div class="cell w-mom" style="justify-content:center;">${momBadge(getGMVMoM(r[1]))}</div>
         </div>`;
       });
@@ -1088,11 +1088,13 @@ function renderHistory(){
       tbody+=`<td style="padding:8px 10px;white-space:nowrap;"><div style="display:flex;align-items:center;gap:5px;"><div class="av av-${r[0]}" style="width:20px;height:20px;font-size:9px;">${r[0].substring(0,2)}</div><span style="font-size:11px;color:#676879;">${r[0]}</span></div></td>`;
       tbody+=`<td style="padding:8px 10px;">${r[2]?`<span class="tag tag-sm ${stClass}">${r[2]}</span>`:''}</td>`;
       visWeeks.forEach(w=>{
-        const isActive=w.id===activeWeekId;const rd=(weekDataCache[w.id]||{})[k]||{};const hasData=rd.update||rd.sku||rd.progress;
+        const isActive=w.id===activeWeekId;const rd=(weekDataCache[w.id]||{})[k]||{};
+        const wItems=getWeekItems(k,w.id);
         let cellContent='';
-        if(hasData){if(rd.update)cellContent+=`<div class="hv-upd-txt">${rd.update}</div>`;if(rd.sku)cellContent+=`<div class="hv-sku-row"><span style="font-size:10px;color:#0060c0;">🏷</span><span class="hv-sku-val">${rd.sku}</span></div>`;if(rd.progress){const pb=rd.progress.split('|')[0];const pr=rd.progress.split('|')[1]||'';const bc=PROG_BADGE_CLASS[pb]||'pp-none';const dc=PROG_DOT_COLOR_HV[pb]||'#c5c7d4';cellContent+='<span class="hv-prog-pill '+bc+'"><span style="width:6px;height:6px;border-radius:50%;background:'+dc+';display:inline-block;margin-right:3px;"></span>'+pb+(pr?' <span style="font-size:9px;opacity:.8;">('+pr+')</span>':'')+'</span>';}}
-        else{cellContent='<span class="hv-no-entry">ไม่มีอัพเดท</span>';}
-        tbody+=`<td class="hv-td-week${isActive?' active-col':''}${!hasData?' no-data':''}">${cellContent}</td>`;
+        if(wItems.length){cellContent+=wItems.map(it=>`<div class="hv-ai-row">${aiTypeBadge(it.type)}<span class="hv-ai-name">${it.name}</span>${aiStBadge(it.status)}</div>`).join('');}
+        if(rd.progress){const pb=rd.progress.split('|')[0];const pr=rd.progress.split('|')[1]||'';const bc=PROG_BADGE_CLASS[pb]||'pp-none';const dc=PROG_DOT_COLOR_HV[pb]||'#c5c7d4';cellContent+='<span class="hv-prog-pill '+bc+'"><span style="width:6px;height:6px;border-radius:50%;background:'+dc+';display:inline-block;margin-right:3px;"></span>'+pb+(pr?' <span style="font-size:9px;opacity:.8;">('+pr+')</span>':'')+'</span>';}
+        if(!cellContent)cellContent='<span class="hv-no-entry">ไม่มี action items</span>';
+        tbody+=`<td class="hv-td-week${isActive?' active-col':''}${!wItems.length?' no-data':''}">${cellContent}</td>`;
       });
       tbody+='</tr>';
     });
@@ -1772,11 +1774,17 @@ const AI_STATUS_CSS={'กำลังดำเนินการ':'ai-st-doing',
 function aiTypeBadge(t){return`<span class="ai-type ${AI_TYPE_CSS[t]||'ai-type-other'}">${t}</span>`;}
 function aiStBadge(s){return`<span class="ai-st ${AI_STATUS_CSS[s]||'ai-st-cancel'}">${s}</span>`;}
 
+function getWeekItems(rk,wid){return(actionItemsCache[rk]||[]).filter(i=>!i.week_id||i.week_id===wid);}
 function buildAIBadge(rk){
-  const items=actionItemsCache[rk]||[];
+  const items=getWeekItems(rk,activeWeekId);
   const active=items.filter(i=>i.status==='กำลังดำเนินการ'||i.status==='รอผล').length;
   const label=items.length===0?'+ action item':active?`🔄 ${active} active`:`✓ ${items.length} items`;
-  return`<button class="ai-manage-btn" style="font-size:11px;margin-top:4px;" data-rk="${rk.replace(/"/g,'&quot;')}" onclick="openAIModal(this.dataset.rk)">${label}</button>`;
+  return`<button class="ai-manage-btn" style="font-size:11px;" data-rk="${rk.replace(/"/g,'&quot;')}" onclick="openAIModal(this.dataset.rk)">${label}</button>`;
+}
+function buildWeekUpdCell(rk){
+  const items=getWeekItems(rk,activeWeekId);
+  if(!items.length)return'<span class="cell-upd-empty">ยังไม่มี action items สัปดาห์นี้</span>';
+  return items.map(it=>`<div class="ai-row">${aiTypeBadge(it.type)}<span class="ai-name-sm" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${it.name}</span>${aiStBadge(it.status)}</div>`).join('');
 }
 function buildActionItemsCell(rk){
   const items=actionItemsCache[rk]||[];
@@ -1840,7 +1848,7 @@ async function saveNewAI(){
   const status=document.getElementById('ai-new-status').value;
   const sku=document.getElementById('ai-new-sku').value.trim();
   if(!name){alert('กรุณาใส่รายละเอียด');return;}
-  const item={id:'ai-'+Date.now(),row_key:_aiModalRK,type,name,status,sku};
+  const item={id:'ai-'+Date.now(),row_key:_aiModalRK,week_id:activeWeekId,type,name,status,sku};
   showSyncing();
   try{
     await sbUpsert('fk_action_items',item);
