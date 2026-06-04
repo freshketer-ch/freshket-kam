@@ -247,6 +247,7 @@ html,body{height:100%;font-family:'Figtree',sans-serif;font-size:14px;background
 .ai-type-case{background:#e3f2fd;color:#0d47a1;}
 .ai-type-newshop{background:#f3e5f5;color:#6a1b9a;}
 .ai-type-debt{background:#ffebee;color:#c62828;}
+.ai-type-visit{background:#e8eaf6;color:#283593;}
 .ai-type-other{background:#f5f5f5;color:#616161;}
 .ai-name-sm{font-size:11px;color:#1d2026;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .ai-st{font-size:10px;font-weight:500;padding:1px 5px;border-radius:3px;white-space:nowrap;flex-shrink:0;}
@@ -439,6 +440,7 @@ html,body{height:100%;font-family:'Figtree',sans-serif;font-size:14px;background
       <option value="เคส">เคส</option>
       <option value="เปิดร้านใหม่">เปิดร้านใหม่</option>
       <option value="หนี้/Finance">หนี้/Finance</option>
+      <option value="Visit">Visit</option>
       <option value="อื่นๆ">อื่นๆ</option>
     </select>
     <select class="filter-sel" id="hv-ai-status-filter" onchange="renderHistory()">
@@ -1794,7 +1796,7 @@ let optyCardsCache={};
 let _aiModalRK='';
 let _optyModalRK='';
 
-const AI_TYPE_CSS={'ขาย/Nego':'ai-type-sell','เคส':'ai-type-case','เปิดร้านใหม่':'ai-type-newshop','หนี้/Finance':'ai-type-debt','อื่นๆ':'ai-type-other'};
+const AI_TYPE_CSS={'ขาย/Nego':'ai-type-sell','เคส':'ai-type-case','เปิดร้านใหม่':'ai-type-newshop','หนี้/Finance':'ai-type-debt','Visit':'ai-type-visit','อื่นๆ':'ai-type-other'};
 const AI_STATUS_CSS={'กำลังดำเนินการ':'ai-st-doing','รอผล':'ai-st-wait','ได้แล้ว':'ai-st-done','ยกเลิก':'ai-st-cancel'};
 
 function aiTypeBadge(t){return`<span class="ai-type ${AI_TYPE_CSS[t]||'ai-type-other'}">${t}</span>`;}
@@ -2053,6 +2055,7 @@ loadAll().then(()=>{
             <option>เคส</option>
             <option>เปิดร้านใหม่</option>
             <option>หนี้/Finance</option>
+            <option>Visit</option>
             <option>อื่นๆ</option>
           </select>
         </div>
