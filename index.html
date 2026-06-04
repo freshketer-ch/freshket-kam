@@ -472,16 +472,7 @@ html,body{height:100%;font-family:'Figtree',sans-serif;font-size:14px;background
 <div class="gmv-wrap" id="gmv-wrap">
   <div class="gmv-toolbar">
     <span style="font-size:13px;font-weight:600;color:#676879;white-space:nowrap;">👤 น้อง:</span>
-    <div class="gmv-staff-chips">
-      <span class="chip on" id="gfc-all" onclick="gmvSetStaff('all')">ทั้งหมด</span>
-      <span class="chip" id="gfc-Dent" onclick="gmvSetStaff('Dent')">Dent</span>
-      <span class="chip" id="gfc-BB" onclick="gmvSetStaff('BB')">BB</span>
-      <span class="chip" id="gfc-Ning" onclick="gmvSetStaff('Ning')">Ning</span>
-      <span class="chip" id="gfc-Tos" onclick="gmvSetStaff('Tos')">Tos</span>
-      <span class="chip" id="gfc-Kwang" onclick="gmvSetStaff('Kwang')">Kwang</span>
-      <span class="chip" id="gfc-Mild" onclick="gmvSetStaff('Mild')">Mild</span>
-      <span class="chip" id="gfc-Nitcha" onclick="gmvSetStaff('Nitcha')">Nitcha</span>
-    </div>
+    <div class="gmv-staff-chips" id="gmv-staff-chips"></div>
     <div class="topbar-sep"></div>
     <select class="filter-sel" id="gmv-sort" onchange="renderGMV()">
       <option value="mom_desc">เรียงตาม MoM% ↓ (ลดสุด)</option>
@@ -1761,11 +1752,13 @@ function switchTeam(t){
   activeTeam=t;
   staffFilter='all';
   hvStaffFilter='all';
+  gmvStaffFilter='all';
   document.getElementById('team-btn-name').classList.toggle('active',t==='name');
   document.getElementById('team-btn-ploy').classList.toggle('active',t==='ploy');
   gmvData=currentGMV();
   renderStaffChips();
   renderHvStaffChips();
+  renderGMVChips();
   render();
   if(document.getElementById('tab-history').classList.contains('active'))renderHistory();
   if(document.getElementById('tab-gmv').classList.contains('active'))renderGMV();
@@ -2057,10 +2050,15 @@ let gmvData = window._gmvOverride||GMV_EMBEDDED;
 let gmvStaffFilter = 'all';
 let gmvChartInstance = null;
 
+function renderGMVChips(){
+  const order=currentStaffOrder();
+  const html='<span class="chip'+(gmvStaffFilter==='all'?' on':'')+'" onclick="gmvSetStaff(\'all\')">ทั้งหมด</span>'+
+    order.map(s=>'<span class="chip'+(gmvStaffFilter===s?' on':'')+'" onclick="gmvSetStaff(\''+s+'\')">'+s+'</span>').join('');
+  document.getElementById('gmv-staff-chips').innerHTML=html;
+}
 function gmvSetStaff(s){
   gmvStaffFilter=s;
-  document.querySelectorAll('#gmv-wrap .chip').forEach(c=>c.classList.remove('on'));
-  const el=document.getElementById('gfc-'+s);if(el)el.classList.add('on');
+  renderGMVChips();
   renderGMV();
 }
 function getGMVFiltered(){
@@ -2134,11 +2132,12 @@ function renderGMVChart(){
     gmvChartInstance=new Chart(ctx,{type:'bar',data:{labels,datasets:[{label:'Team GMV',data:[...totals,rrVal],backgroundColor:['rgba(0,115,234,0.35)','rgba(0,115,234,0.35)','rgba(0,115,234,0.35)','rgba(0,115,234,0.35)','rgba(0,115,234,0.6)','rgba(0,133,77,0.6)'],borderColor:['#0073ea','#0073ea','#0073ea','#0073ea','#0073ea','#00854d'],borderWidth:2,borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>fmt(v)}}}}});
     return;
   }
-  const staffList=gmvStaffFilter==='all'?GMV_STAFF_ORDER_G:[gmvStaffFilter];
+  const staffList=gmvStaffFilter==='all'?currentStaffOrder():[gmvStaffFilter];
+  const colors=currentGroupColors();
   const datasets=staffList.map(staff=>{
     const sData=data.filter(r=>r.staff===staff);
     const vals=[...GMV_MONTHS.map(m=>sData.reduce((s,r)=>s+(r[m]||0),0)),sData.reduce((s,r)=>s+(r.runrate||0),0)];
-    const col=GMV_STAFF_COLORS[staff]||'#999';
+    const col=colors[staff]||'#999';
     return{label:staff,data:vals,backgroundColor:col+'99',borderColor:col,borderWidth:1,borderRadius:3};
   });
   gmvChartInstance=new Chart(ctx,{type:'bar',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:12}}}},scales:{x:{stacked:mode==='stacked'},y:{stacked:mode==='stacked',ticks:{callback:v=>fmt(v)}}}}});
@@ -2164,7 +2163,7 @@ function renderGMVTable(){
     const isDecline=mom!==null&&mom<0;
     const action=getLatestAction(r.account_name);
     const actionBadge=action?`<span class="action-badge">✓ มี action</span>`:(isDecline?`<span class="no-action-badge">⚠ ยังไม่มี</span>`:'<span style="color:#c5c7d4;font-size:11px;">—</span>');
-    const col=GMV_STAFF_COLORS[r.staff]||'#999';
+    const col=currentGroupColors()[r.staff]||'#999';
     html+=`<tr style="cursor:pointer;" onclick="openGMVModal('${r.account_name.replace(/'/g,"\\'")}')">
       <td style="text-align:center;color:#c5c7d4;font-size:11px;">${i+1}</td>
       <td>${isDecline?'<span class="alert-dot"></span>':''}<span style="font-size:12px;font-weight:500;">${r.account_name}</span></td>
@@ -2411,7 +2410,7 @@ function openGMVModal(accountName) {
 
   const mom = r.Apr ? ((r.runrate - r.Apr) / r.Apr * 100) : null;
   const momStr = mom !== null ? (mom >= 0 ? '+' : '') + mom.toFixed(1) + '%' : '—';
-  const col = GMV_STAFF_COLORS[r.staff] || '#0073ea';
+  const col = currentGroupColors()[r.staff] || '#0073ea';
 
   document.getElementById('gmv-modal-title').textContent = accountName;
   document.getElementById('gmv-modal-sub').textContent = r.staff + (mom !== null ? '  |  MoM ' + momStr : '');
@@ -2511,7 +2510,7 @@ function openGMVListModal(mode) {
   document.getElementById('gmv-list-modal-body').innerHTML = data.map((r, i) => {
     const mom = momPct(r.Apr, r.runrate);
     const momStr = mom !== null ? (mom >= 0 ? '+' : '') + mom.toFixed(1) + '%' : '—';
-    const col = GMV_STAFF_COLORS[r.staff] || '#e44258';
+    const col = currentGroupColors()[r.staff] || '#e44258';
     const action = getLatestAction(r.account_name);
     const cid = 'mini-chart-' + i;
     const acctEsc = r.account_name.replace(/"/g,'&quot;');
@@ -2556,7 +2555,7 @@ function openGMVListModal(mode) {
     data.forEach((r, i) => {
       const canvas = document.getElementById('mini-chart-' + i);
       if (!canvas) return;
-      const col = GMV_STAFF_COLORS[r.staff] || '#e44258';
+      const col = currentGroupColors()[r.staff] || '#e44258';
       const vals = [r.Jan, r.Feb, r.Mar, r.Apr, r.runrate].map(v => v || 0);
       _miniCharts[i] = new Chart(canvas, {
         type: 'line',
@@ -2904,7 +2903,7 @@ async function deleteOptyCard(id){
 
 document.getElementById('srch').addEventListener('input',()=>render());
 loadAll().then(()=>{
-  renderWeekSelect();renderWeekPicker();renderStaffChips();renderHvStaffChips();render();
+  renderWeekSelect();renderWeekPicker();renderStaffChips();renderHvStaffChips();renderGMVChips();render();
   // Restore GMV override from localStorage if available
   try{
     const saved=localStorage.getItem('fk_gmv_override');
