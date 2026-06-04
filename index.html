@@ -1774,7 +1774,7 @@ const AI_STATUS_CSS={'กำลังดำเนินการ':'ai-st-doing',
 function aiTypeBadge(t){return`<span class="ai-type ${AI_TYPE_CSS[t]||'ai-type-other'}">${t}</span>`;}
 function aiStBadge(s){return`<span class="ai-st ${AI_STATUS_CSS[s]||'ai-st-cancel'}">${s}</span>`;}
 
-function getWeekItems(rk,wid){return(actionItemsCache[rk]||[]).filter(i=>!i.week_id||i.week_id===wid);}
+function getWeekItems(rk,wid){return(actionItemsCache[rk]||[]).filter(i=>(i.week_id||activeWeekId)===wid);}
 function buildAIBadge(rk){
   const items=getWeekItems(rk,activeWeekId);
   const active=items.filter(i=>i.status==='กำลังดำเนินการ'||i.status==='รอผล').length;
