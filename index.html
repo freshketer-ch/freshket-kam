@@ -936,14 +936,14 @@ function render(){
         const pdot=PROG_COLOR[progBase]||'#c5c7d4';
         const progOpts=PROG_OPTS.map(o=>'<option value="'+o+'"'+(progBase===o?' selected':'')+'>'+( o||'เลือก...')+'</option>').join('');
         const progReasonBadge=progReason?'<span style="font-size:9px;background:#ffebee;color:#c62828;border-radius:3px;padding:1px 5px;margin-left:3px;font-weight:600;">'+progReason+'</span>':'';
-        const stCell=stVal?'<span class="tag '+stClass+'">'+stVal+'</span>':'';
+        const stCell=editMode?'<select class="cell-editable" onchange="setField(\''+k+'\',2,this.value);render()">'+ ['','Uplift','Maintain','Winback','Skip','Debt'].map(v=>'<option value="'+v+'"'+(stVal===v?' selected':'')+'>'+(v||'—')+'</option>').join('')+'</select>':stVal?'<span class="tag '+stClass+'">'+stVal+'</span>':'';
         const oppCell=editMode?'<select class="cell-editable" onchange="setField(\''+k+'\',3,this.value);render()">'+['','High','Medium','Low'].map(v=>'<option value="'+v+'"'+(oppVal===v?' selected':'')+'>'+(v||'—')+'</option>').join('')+'</select>':oppHtml(oppVal);
         const priCell=editMode?'<select class="cell-editable" onchange="setField(\''+k+'\',4,this.value);render()">'+['','P1','P2','P3'].map(v=>'<option value="'+v+'"'+(priVal===v?' selected':'')+'>'+(v||'—')+'</option>').join('')+'</select>':priVal?'<span class="pri '+priClass+'">'+priVal+'</span>':'';
         const diffCell=editMode?'<select class="cell-editable" onchange="setField(\''+k+'\',5,this.value);render()">'+['','Easy','Medium','Hard'].map(v=>'<option value="'+v+'"'+(diffVal===v?' selected':'')+'>'+(v||'—')+'</option>').join('')+'</select>':diffHtml(diffVal);
         html+=`<div class="row${editMode?' edit-row':''}">
           <div class="cell cell-chk-freeze"><input type="checkbox" /></div>
           <div class="cell cell-acct-freeze"><div class="acct-name">${r[1]}${buildOptyFlag(k)}</div>${r[6]?'<div class="acct-note">'+r[6]+'</div>':''}${buildOptyInline(k)}</div>
-          <div class="cell w-status">${stCell}</div>
+          <div class="cell w-status${editMode?' cell-editable':''}">${stCell}</div>
           <div class="cell w-opp${editMode?' cell-editable':''}">${oppCell}</div>
           <div class="cell w-pri${editMode?' cell-editable':''}" style="${editMode?'justify-content:flex-start;':''}">${priCell}</div>
           <div class="cell w-diff${editMode?' cell-editable':''}">${diffCell}</div>
