@@ -1989,7 +1989,8 @@ function openGMVModal(accountName) {
   const r = data.find(d => d.account_name === accountName);
   if (!r) return;
 
-  const mom = r.Apr ? ((r.runrate - r.Apr) / r.Apr * 100) : null;
+  const pm=prevMonthKey(),cm=mtdMonthKey(),pml=prevMonthLabel(),cml=mtdMonthLabel();
+  const mom = r[pm] ? ((r.runrate - r[pm]) / r[pm] * 100) : null;
   const momStr = mom !== null ? (mom >= 0 ? '+' : '') + mom.toFixed(1) + '%' : '—';
   const col = currentGroupColors()[r.staff] || '#0073ea';
 
@@ -1999,8 +2000,8 @@ function openGMVModal(accountName) {
   // Stats
   const stats = [
     { label: 'ม.ค.', val: fmt(r.Jan) },
-    { label: 'เม.ย.', val: fmt(r.Apr) },
-    { label: 'พ.ค. MTD', val: fmt(r.May), hi: true },
+    { label: pml, val: fmt(r[pm]) },
+    { label: cml+' MTD', val: fmt(r[cm]), hi: true },
     { label: 'Runrate', val: fmt(r.runrate), hi: true },
   ];
   document.getElementById('gmv-modal-stats').innerHTML = stats.map(s =>
@@ -2020,14 +2021,14 @@ function openGMVModal(accountName) {
     actionDiv.style.display = 'none';
   }
 
-  // Chart
+  // Chart — show all 6 months + RR
   const canvas = document.getElementById('gmv-modal-chart');
   if (_gmvModalChart) { _gmvModalChart.destroy(); _gmvModalChart = null; }
-  const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค. MTD', 'RR'];
-  const vals = [r.Jan, r.Feb, r.Mar, r.Apr, r.May, r.runrate].map(v => v || 0);
+  const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', pml, cml+' MTD', 'RR'];
+  const vals = [r.Jan, r.Feb, r.Mar, r.Apr, r[pm], r[cm], r.runrate].map(v => v || 0);
   const bgColors = vals.map((v, i) => {
-    if (i === 5) return col + '33';
-    if (i >= 4) return col + '99';
+    if (i === 6) return col + '33';
+    if (i >= 5) return col + '99';
     return col + 'cc';
   });
   _gmvModalChart = new Chart(canvas, {
@@ -2137,11 +2138,11 @@ function openGMVListModal(mode) {
       const canvas = document.getElementById('mini-chart-' + i);
       if (!canvas) return;
       const col = currentGroupColors()[r.staff] || '#e44258';
-      const vals = [r.Jan, r.Feb, r.Mar, r.Apr, r.runrate].map(v => v || 0);
+      const vals = [r.Jan, r.Feb, r.Mar, r.Apr, r[prevMonthKey()], r[mtdMonthKey()], r.runrate].map(v => v || 0);
       _miniCharts[i] = new Chart(canvas, {
         type: 'line',
         data: {
-          labels: ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','RR'],
+          labels: ['ม.ค.','ก.พ.','มี.ค.','เม.ย.',prevMonthLabel(),mtdMonthLabel(),'RR'],
           datasets: [{
             data: vals,
             borderColor: col,
