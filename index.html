@@ -1408,7 +1408,7 @@ function render(){
         const diffCell=editMode?'<select class="cell-editable" onchange="setField(\''+k+'\',5,this.value);render()">'+['','Easy','Medium','Hard'].map(v=>'<option value="'+v+'"'+(diffVal===v?' selected':'')+'>'+(v||'—')+'</option>').join('')+'</select>':diffHtml(diffVal);
         html+=`<div class="row${editMode?' edit-row':''}">
           <div class="cell cell-chk-freeze"><input type="checkbox" /></div>
-          <div class="cell cell-acct-freeze"><div class="acct-name">${r[1]}${buildOptyFlag(k)}</div>${r[6]?'<div class="acct-note">'+r[6]+'</div>':''}${buildOptyInline(k)}</div>
+          <div class="cell cell-acct-freeze"><div class="acct-name">${r[1]}${buildOptyFlag(k)}</div>${buildOptyInline(k)}</div>
           <div class="cell w-status${editMode?' cell-editable':''}">${stCell}</div>
           <div class="cell w-opp${editMode?' cell-editable':''}">${oppCell}</div>
           <div class="cell w-pri${editMode?' cell-editable':''}" style="${editMode?'justify-content:flex-start;':''}">${priCell}</div>
