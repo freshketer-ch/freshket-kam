@@ -283,6 +283,12 @@ html,body{height:100%;font-family:'Figtree',sans-serif;font-size:14px;background
 .fk-item-info{flex:1;min-width:0;}
 .fk-del-btn{width:28px;height:28px;border-radius:6px;border:1px solid #fce4e8;background:#fff;color:#e44258;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0;}
 .fk-del-btn:hover{background:#ffebee;}
+.fk-edit-btn{width:28px;height:28px;border-radius:6px;border:1px solid #dbe4f8;background:#fff;color:#0073ea;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0;}
+.fk-edit-btn:hover{background:#e8f0fe;}
+.fk-save-btn{padding:5px 14px;border-radius:6px;border:none;background:#0073ea;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:'Figtree',sans-serif;}
+.fk-save-btn:hover{background:#0060c0;}
+.fk-cancel-btn{padding:5px 14px;border-radius:6px;border:1px solid #e0e3e9;background:#fff;color:#676879;font-size:12px;cursor:pointer;font-family:'Figtree',sans-serif;}
+.fk-cancel-btn:hover{background:#f4f5f7;}
 .fk-add-form{background:#f4f5f7;border-radius:8px;padding:14px;border:1px solid #e0e3e9;margin-top:4px;}
 .fk-add-form label{font-size:11px;color:#676879;display:block;margin-bottom:3px;}
 .fk-add-form input,.fk-add-form select,.fk-add-form textarea{width:100%;font-size:13px;padding:7px 10px;border-radius:6px;border:1px solid #c5c7d4;font-family:'Figtree',sans-serif;background:#fff;}
@@ -2278,7 +2284,7 @@ function debounceSave(el,field){
 // ══════════════════════════════
 let actionItemsCache={};
 let optyCardsCache={};
-let _aiModalRK='';
+let _aiModalRK='';let _editingAIId='';let _editingOptyId='';
 let _optyModalRK='';
 
 const AI_TYPE_CSS={'ขาย/Nego':'ai-type-sell','เคส':'ai-type-case','เปิดร้านใหม่':'ai-type-newshop','หนี้/Finance':'ai-type-debt','Visit':'ai-type-visit','อื่นๆ':'ai-type-other'};
@@ -2348,23 +2354,56 @@ function closeAIModal(e){
   document.getElementById('ai-modal-bg').style.display='none';
   document.getElementById('ai-new-name').value='';
   document.getElementById('ai-new-sku').value='';
+  _editingAIId='';
 }
 function renderAIList(){
   const items=actionItemsCache[_aiModalRK]||[];
   const el=document.getElementById('ai-modal-list');
   if(!items.length){el.innerHTML='<div style="font-size:13px;color:#c5c7d4;text-align:center;padding:12px 0;">ยังไม่มี action items</div>';return;}
-  el.innerHTML=items.map(it=>`
-    <div class="fk-item-card">
+  const sel=s=>`<option value="${s}"`;
+  el.innerHTML=items.map(it=>{
+    if(it.id===_editingAIId){
+      const esc=v=>(v||'').replace(/"/g,'&quot;');
+      const typeOpts=['ขาย/Nego','เคส','เปิดร้านใหม่','หนี้/Finance','Visit','อื่นๆ'].map(t=>`<option value="${t}"${t===it.type?' selected':''}>${t}</option>`).join('');
+      const stOpts=['กำลังดำเนินการ','รอผล','ได้แล้ว','ยกเลิก'].map(s=>`<option value="${s}"${s===it.status?' selected':''}>${s}</option>`).join('');
+      return`<div class="fk-item-card" style="flex-direction:column;gap:8px;border-color:#0073ea;">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <select id="eai-type-${it.id}" style="font-size:12px;padding:5px 8px;border-radius:6px;border:1px solid #c5c7d4;font-family:'Figtree',sans-serif;flex:1;">${typeOpts}</select>
+          <select id="eai-status-${it.id}" style="font-size:12px;padding:5px 8px;border-radius:6px;border:1px solid #c5c7d4;font-family:'Figtree',sans-serif;flex:1;">${stOpts}</select>
+        </div>
+        <input id="eai-name-${it.id}" value="${esc(it.name)}" placeholder="รายละเอียด" style="font-size:13px;padding:6px 10px;border-radius:6px;border:1px solid #c5c7d4;font-family:'Figtree',sans-serif;width:100%;box-sizing:border-box;">
+        <input id="eai-sku-${it.id}" value="${esc(it.sku||'')}" placeholder="SKU (ถ้ามี)" style="font-size:12px;padding:6px 10px;border-radius:6px;border:1px solid #c5c7d4;font-family:'Figtree',sans-serif;width:100%;box-sizing:border-box;">
+        <div style="display:flex;gap:6px;justify-content:flex-end;">
+          <button class="fk-cancel-btn" onclick="_editingAIId='';renderAIList()">ยกเลิก</button>
+          <button class="fk-save-btn" onclick="saveEditAI('${it.id}')">💾 บันทึก</button>
+        </div>
+      </div>`;
+    }
+    return`<div class="fk-item-card">
       <div class="fk-item-info">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">${aiTypeBadge(it.type)}${aiStBadge(it.status)}</div>
         <div style="font-size:13px;color:#1d2026;line-height:1.4;">${it.name}</div>
         ${it.sku?`<div style="font-size:11px;color:#0060c0;margin-top:3px;">SKU: ${it.sku}</div>`:''}
       </div>
-      <select style="font-size:12px;padding:4px 6px;border-radius:5px;border:1px solid #e0e3e9;background:#fff;font-family:'Figtree',sans-serif;align-self:flex-start;" onchange="updateAIStatus('${it.id}',this.value)">
-        ${['กำลังดำเนินการ','รอผล','ได้แล้ว','ยกเลิก'].map(s=>`<option${s===it.status?' selected':''}>${s}</option>`).join('')}
-      </select>
+      <button class="fk-edit-btn" onclick="_editingAIId='${it.id}';renderAIList()" title="แก้ไข">✏️</button>
       <button class="fk-del-btn" onclick="deleteAIItem('${it.id}')">×</button>
-    </div>`).join('');
+    </div>`;
+  }).join('');
+}
+async function saveEditAI(id){
+  let found=null;
+  for(const rk of Object.keys(actionItemsCache)){const it=actionItemsCache[rk].find(i=>i.id===id);if(it){found=it;break;}}
+  if(!found)return;
+  found.type=document.getElementById('eai-type-'+id).value;
+  found.status=document.getElementById('eai-status-'+id).value;
+  found.name=document.getElementById('eai-name-'+id).value.trim();
+  found.sku=document.getElementById('eai-sku-'+id).value.trim();
+  if(!found.name){alert('กรุณาใส่รายละเอียด');return;}
+  showSyncing();
+  try{
+    await sbUpsert('fk_action_items',found);
+    _editingAIId='';renderAIList();render();showSynced();
+  }catch(e){showSyncErr();console.error(e);}
 }
 async function saveNewAI(){
   const type=document.getElementById('ai-new-type').value;
@@ -2413,20 +2452,41 @@ function closeOptyModal(e){
   if(e&&e.target!==document.getElementById('opty-modal-bg'))return;
   document.getElementById('opty-modal-bg').style.display='none';
   ['opty-new-title','opty-new-category','opty-new-value','opty-new-deadline','opty-new-note'].forEach(id=>document.getElementById(id).value='');
+  _editingOptyId='';
 }
 function renderOptyList(){
   const cards=optyCardsCache[_optyModalRK]||[];
   const el=document.getElementById('opty-modal-list');
   if(!cards.length){el.innerHTML='<div style="font-size:13px;color:#c5c7d4;text-align:center;padding:12px 0;">ยังไม่มี opty cards</div>';return;}
-  el.innerHTML=cards.map(c=>`
-    <div class="fk-item-card" style="flex-direction:column;gap:6px;">
+  el.innerHTML=cards.map(c=>{
+    if(c.id===_editingOptyId){
+      const esc=v=>(v||'').replace(/"/g,'&quot;');
+      const inp=(id,val,ph,type='text')=>`<input id="${id}" value="${esc(val)}" placeholder="${ph}" type="${type}" style="font-size:12px;padding:6px 10px;border-radius:6px;border:1px solid #c5c7d4;font-family:'Figtree',sans-serif;width:100%;box-sizing:border-box;">`;
+      return`<div class="fk-item-card" style="flex-direction:column;gap:8px;border-color:#0073ea;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+          <div><label style="font-size:11px;color:#676879;">ชื่อ Opportunity</label>${inp('eopty-title-'+c.id,c.title,'ชื่อ opportunity')}</div>
+          <div><label style="font-size:11px;color:#676879;">หมวดหมู่</label>${inp('eopty-cat-'+c.id,c.category||'','เช่น Meat, Seafood')}</div>
+          <div><label style="font-size:11px;color:#676879;">มูลค่า (฿/เดือน)</label>${inp('eopty-val-'+c.id,c.value||'','0','number')}</div>
+          <div><label style="font-size:11px;color:#676879;">Deadline</label>${inp('eopty-dl-'+c.id,c.deadline||'','','date')}</div>
+        </div>
+        <div><label style="font-size:11px;color:#676879;">หมายเหตุ</label><textarea id="eopty-note-${c.id}" placeholder="หมายเหตุ" rows="2" style="font-size:12px;padding:6px 10px;border-radius:6px;border:1px solid #c5c7d4;font-family:'Figtree',sans-serif;width:100%;box-sizing:border-box;resize:vertical;">${esc(c.note||'')}</textarea></div>
+        <div style="display:flex;align-items:center;gap:8px;justify-content:space-between;">
+          <select id="eopty-status-${c.id}" style="font-size:12px;padding:6px 8px;border-radius:6px;border:1px solid #c5c7d4;font-family:'Figtree',sans-serif;">
+            <option value="open"${c.status==='open'?' selected':''}>Open</option>
+            <option value="closed"${c.status==='closed'?' selected':''}>Closed</option>
+          </select>
+          <div style="display:flex;gap:6px;">
+            <button class="fk-cancel-btn" onclick="_editingOptyId='';renderOptyList()">ยกเลิก</button>
+            <button class="fk-save-btn" onclick="saveEditOpty('${c.id}')">💾 บันทึก</button>
+          </div>
+        </div>
+      </div>`;
+    }
+    return`<div class="fk-item-card" style="flex-direction:column;gap:6px;">
       <div style="display:flex;align-items:center;justify-content:space-between;">
         <span style="font-size:13px;font-weight:600;color:#1d2026;">${c.title}</span>
         <div style="display:flex;gap:6px;align-items:center;">
-          <select style="font-size:12px;padding:3px 6px;border-radius:5px;border:1px solid #e0e3e9;background:#fff;font-family:'Figtree',sans-serif;" onchange="updateOptyStatus('${c.id}',this.value)">
-            <option${c.status==='open'?' selected':''} value="open">Open</option>
-            <option${c.status==='closed'?' selected':''} value="closed">Closed</option>
-          </select>
+          <button class="fk-edit-btn" onclick="_editingOptyId='${c.id}';renderOptyList()" title="แก้ไข">✏️</button>
           <button class="fk-del-btn" onclick="deleteOptyCard('${c.id}')">×</button>
         </div>
       </div>
@@ -2437,7 +2497,26 @@ function renderOptyList(){
         <span class="${c.status==='open'?'opty-st-open':'opty-st-closed'}">${c.status==='open'?'● Open':'✓ Closed'}</span>
       </div>
       ${c.note?`<div style="font-size:11px;color:#676879;">${c.note}</div>`:''}
-    </div>`).join('');
+    </div>`;
+  }).join('');
+}
+async function saveEditOpty(id){
+  let found=null;
+  for(const rk of Object.keys(optyCardsCache)){const c=optyCardsCache[rk].find(c=>c.id===id);if(c){found=c;break;}}
+  if(!found)return;
+  const title=document.getElementById('eopty-title-'+id).value.trim();
+  if(!title){alert('กรุณาใส่ชื่อ opportunity');return;}
+  found.title=title;
+  found.category=document.getElementById('eopty-cat-'+id).value.trim();
+  found.value=parseFloat(document.getElementById('eopty-val-'+id).value)||0;
+  found.deadline=document.getElementById('eopty-dl-'+id).value||null;
+  found.note=document.getElementById('eopty-note-'+id).value.trim();
+  found.status=document.getElementById('eopty-status-'+id).value;
+  showSyncing();
+  try{
+    await sbUpsert('fk_opty_cards',found);
+    _editingOptyId='';renderOptyList();render();renderHistory();showSynced();
+  }catch(e){showSyncErr();console.error(e);}
 }
 async function saveNewOpty(){
   const title=document.getElementById('opty-new-title').value.trim();
