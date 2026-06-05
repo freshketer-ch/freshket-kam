@@ -1657,11 +1657,24 @@ function momPct(apr,rr){
   return((rr-apr)/apr*100);
 }
 function getLatestAction(accountName){
+  if(!accountName)return null;
+  const acctShort=accountName.substring(0,12);
+  // Check action items first (weeks ordered newest→oldest via created_at.desc)
+  for(const w of weeks){
+    for(const [rk,items] of Object.entries(actionItemsCache)){
+      const parts=rk.split('||');
+      if(parts.length===2&&parts[1]&&acctShort===parts[1].substring(0,12)){
+        const wkItems=items.filter(i=>i.week_id===w.id);
+        if(wkItems.length)return wkItems.map(i=>i.name).join(' · ');
+      }
+    }
+  }
+  // Fall back to old weekly update text
   for(const wid of weeks.map(w=>w.id)){
     const cache=weekDataCache[wid]||{};
     for(const [key,val] of Object.entries(cache)){
       const parts=key.split('||');
-      if(parts.length===2&&accountName&&parts[1]&&accountName.substring(0,12)===parts[1].substring(0,12)){
+      if(parts.length===2&&parts[1]&&acctShort===parts[1].substring(0,12)){
         if(val.update||val.sku||val.progress)return val.update||'';
       }
     }
