@@ -1370,6 +1370,7 @@ function switchTeam(t){
   render();
   if(document.getElementById('tab-history').classList.contains('active'))renderHistory();
   if(document.getElementById('tab-gmv').classList.contains('active'))renderGMV();
+  if(document.getElementById('tab-pipeline').classList.contains('active'))renderPipeline();
 }
 function diffHtml(d){if(!d)return'<span style="color:#c5c7d4">—</span>';const cls=d==='Hard'?'diff-hard':d==='Easy'?'diff-easy':'diff-med';const n=d==='Hard'?3:d==='Easy'?1:2;const bars=[1,2,3].map(i=>`<div class="diff-bar${i>n?' off':''}"></div>`).join('');return`<div class="diff-wrap ${cls}">${bars}<span class="diff-lbl">${d}</span></div>`;}
 function oppHtml(o){if(!o)return'<span style="color:#c5c7d4">—</span>';const cls=o==='High'?'opp-high':o==='Low'?'opp-low':'opp-med';return`<div class="opp-wrap ${cls}"><div class="opp-circle"></div><span class="opp-lbl">${o}</span></div>`;}
