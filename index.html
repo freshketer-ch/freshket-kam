@@ -2620,6 +2620,8 @@ function plFmtInput(v){return v?Math.round(v).toLocaleString('en-US'):'';}
 function plParseInput(s){return parseFloat(String(s).replace(/,/g,''))||0;}
 function plGetLostReason(id){return localStorage.getItem('fk_pl_lostreason_'+id)||'';}
 function plSaveLostReason(id,val){localStorage.setItem('fk_pl_lostreason_'+id,val);}
+function plTargetsOpen(){return localStorage.getItem('fk_pl_targets_open')!=='0';}
+function plToggleTargets(){localStorage.setItem('fk_pl_targets_open',plTargetsOpen()?'0':'1');renderPipeline();}
 function plStatusClass(s){
   const st=(s||'').toLowerCase();
   if(st==='won')return'pl-st-won';
@@ -2704,9 +2706,25 @@ function renderPipeline(){
     </div>`;
   }).join('');
 
+  const _tgtOpen=plTargetsOpen();
+  const _sumInd=staffList.reduce((s,st)=>s+plGetIndTarget(st),0);
+  const _tgtDiff=_sumInd-teamTarget;
+  const _tgtExact=Math.abs(_tgtDiff)<1;
+  const _tgtOver=_tgtDiff>0;
+  const _sumColor=_tgtExact?'#2e7d32':_tgtOver?'#e65100':'#c62828';
+  const _sumIcon=_tgtExact?'✅':_tgtOver?'⚠️':'❗';
+  const _sumMsg=_tgtExact?'ครบ':_tgtOver?`เกิน ${Math.round(Math.abs(_tgtDiff)).toLocaleString('en-US')}฿`:`ขาด ${Math.round(Math.abs(_tgtDiff)).toLocaleString('en-US')}฿`;
+
   const targetSettingsHtml=`
     <div class="pl-section" style="margin-bottom:16px;">
-      <div class="pl-section-title">🎯 ตั้งเป้า</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${_tgtOpen?'16px':'0'};">
+        <div style="font-size:13px;font-weight:700;color:#676879;text-transform:lowercase;letter-spacing:.02em;">🎯 ตั้งเป้า</div>
+        <button onclick="plToggleTargets()" style="display:flex;align-items:center;gap:5px;background:none;border:1px solid #e0e3e9;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;color:#676879;font-family:'Figtree',sans-serif;">
+          ${_tgtOpen?'▲ ซ่อน':'▼ กาง'}
+        </button>
+      </div>
+
+      ${_tgtOpen?`
       <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:20px;border-bottom:2px solid #f0f2f5;">
         <div style="font-size:14px;font-weight:700;color:#1d2026;min-width:100px;flex-shrink:0;">ทาเก็จทีม</div>
         <input class="pl-target-inp-big" type="text" inputmode="numeric" placeholder="0" value="${plFmtInput(teamTarget)}" onfocus="this.value=this.value.replace(/,/g,'')" onchange="plSaveTeamTarget(this.value)" onblur="plSaveTeamTarget(this.value)">
@@ -2714,22 +2732,19 @@ function renderPipeline(){
       </div>
       <div style="font-size:12px;font-weight:600;color:#676879;margin-bottom:12px;text-transform:uppercase;letter-spacing:.04em;">ทาเก็จรายคน</div>
       ${indTargetRows}
-      ${(()=>{
-        const sumInd=staffList.reduce((s,st)=>s+plGetIndTarget(st),0);
-        if(!sumInd&&!teamTarget)return'';
-        const diff=sumInd-teamTarget;
-        const absDiff=Math.abs(diff);
-        const isExact=absDiff<1;
-        const isOver=diff>0;
-        const sumColor=isExact?'#2e7d32':isOver?'#e65100':'#c62828';
-        const icon=isExact?'✅':isOver?'⚠️':'❗';
-        const msg=isExact?'กระจายครบแล้ว':isOver?`เกิน ${Math.round(absDiff).toLocaleString('en-US')}฿`:`ขาดอยู่ ${Math.round(absDiff).toLocaleString('en-US')}฿`;
-        return`<div style="margin-top:16px;padding:12px 16px;border-radius:8px;background:#f9fafb;border:1px solid #e0e3e9;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-          <div style="font-size:13px;color:#676879;">รายคนรวม</div>
-          <div style="font-size:15px;font-weight:700;color:#1d2026;">${Math.round(sumInd).toLocaleString('en-US')}฿</div>
-          ${teamTarget?`<div style="font-size:12px;color:#c5c7d4;">vs ทีม</div><div style="font-size:15px;font-weight:700;color:#1d2026;">${Math.round(teamTarget).toLocaleString('en-US')}฿</div><div style="font-size:13px;font-weight:600;color:${sumColor};">${icon} ${msg}</div>`:''}
-        </div>`;
-      })()}
+      ${(_sumInd||teamTarget)?`<div style="margin-top:16px;padding:12px 16px;border-radius:8px;background:#f9fafb;border:1px solid #e0e3e9;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <div style="font-size:13px;color:#676879;">รายคนรวม</div>
+        <div style="font-size:15px;font-weight:700;color:#1d2026;">${Math.round(_sumInd).toLocaleString('en-US')}฿</div>
+        ${teamTarget?`<div style="font-size:12px;color:#c5c7d4;">vs ทีม</div><div style="font-size:15px;font-weight:700;color:#1d2026;">${Math.round(teamTarget).toLocaleString('en-US')}฿</div><div style="font-size:13px;font-weight:600;color:${_sumColor};">${_sumIcon} ${_sumMsg}</div>`:''}
+      </div>`:''}
+      `:`
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <div style="font-size:13px;color:#676879;flex-shrink:0;">ทาเก็จทีม</div>
+        <input class="pl-target-inp-big" type="text" inputmode="numeric" placeholder="0" value="${plFmtInput(teamTarget)}" onfocus="this.value=this.value.replace(/,/g,'')" onchange="plSaveTeamTarget(this.value)" onblur="plSaveTeamTarget(this.value)" style="font-size:15px;padding:5px 10px;">
+        <div style="font-size:12px;color:#676879;">฿ / เดือน</div>
+        ${(_sumInd&&teamTarget)?`<div style="font-size:13px;font-weight:600;color:${_sumColor};margin-left:8px;">${_sumIcon} รายคนรวม ${Math.round(_sumInd).toLocaleString('en-US')}฿ — ${_sumMsg}</div>`:''}
+      </div>
+      `}
     </div>`;
 
   // Gap analysis vs team target — helper to build one rich row
