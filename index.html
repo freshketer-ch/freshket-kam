@@ -2613,9 +2613,11 @@ async function deleteOptyCard(id){
 
 // ── Pipeline Tab ──
 function plGetTeamTarget(){return parseFloat(localStorage.getItem('fk_pl_team_target_'+activeTeam)||'0');}
-function plSaveTeamTarget(val){localStorage.setItem('fk_pl_team_target_'+activeTeam,String(parseFloat(val)||0));renderPipeline();}
+function plSaveTeamTarget(val){localStorage.setItem('fk_pl_team_target_'+activeTeam,String(parseFloat(String(val).replace(/,/g,''))||0));renderPipeline();}
 function plGetIndTarget(staff){return parseFloat(localStorage.getItem('fk_pl_ind_'+activeTeam+'_'+encodeURIComponent(staff))||'0');}
-function plSaveIndTarget(staff,val){localStorage.setItem('fk_pl_ind_'+activeTeam+'_'+encodeURIComponent(staff),String(parseFloat(val)||0));renderPipeline();}
+function plSaveIndTarget(staff,val){localStorage.setItem('fk_pl_ind_'+activeTeam+'_'+encodeURIComponent(staff),String(parseFloat(String(val).replace(/,/g,''))||0));renderPipeline();}
+function plFmtInput(v){return v?Math.round(v).toLocaleString('en-US'):'';}
+function plParseInput(s){return parseFloat(String(s).replace(/,/g,''))||0;}
 function plGetLostReason(id){return localStorage.getItem('fk_pl_lostreason_'+id)||'';}
 function plSaveLostReason(id,val){localStorage.setItem('fk_pl_lostreason_'+id,val);}
 function plStatusClass(s){
@@ -2694,7 +2696,7 @@ function renderPipeline(){
         <span style="font-size:13px;font-weight:600;color:#1d2026;">${s}</span>
       </div>
       <div style="font-size:12px;color:#676879;min-width:90px;text-align:right;flex-shrink:0;">RR: ${fmtB(rr)}฿</div>
-      <input class="pl-ind-inp" type="number" placeholder="Target..." value="${tgt||''}" onchange="plSaveIndTarget('${s}',this.value)" onblur="plSaveIndTarget('${s}',this.value)">
+      <input class="pl-ind-inp" type="text" inputmode="numeric" placeholder="0" value="${plFmtInput(tgt)}" onfocus="this.value=this.value.replace(/,/g,'')" onchange="plSaveIndTarget('${s}',this.value)" onblur="plSaveIndTarget('${s}',this.value)"style="width:120px;">
       ${barHtml}
       ${pctHtml}
     </div>`;
@@ -2705,11 +2707,27 @@ function renderPipeline(){
       <div class="pl-section-title">🎯 ตั้งเป้า</div>
       <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:20px;border-bottom:2px solid #f0f2f5;">
         <div style="font-size:14px;font-weight:700;color:#1d2026;min-width:100px;flex-shrink:0;">ทาเก็จทีม</div>
-        <input class="pl-target-inp-big" type="number" placeholder="0" value="${teamTarget||''}" onchange="plSaveTeamTarget(this.value)" onblur="plSaveTeamTarget(this.value)">
+        <input class="pl-target-inp-big" type="text" inputmode="numeric" placeholder="0" value="${plFmtInput(teamTarget)}" onfocus="this.value=this.value.replace(/,/g,'')" onchange="plSaveTeamTarget(this.value)" onblur="plSaveTeamTarget(this.value)">
         <div style="font-size:12px;color:#676879;">฿ / เดือน</div>
       </div>
       <div style="font-size:12px;font-weight:600;color:#676879;margin-bottom:12px;text-transform:uppercase;letter-spacing:.04em;">ทาเก็จรายคน</div>
       ${indTargetRows}
+      ${(()=>{
+        const sumInd=staffList.reduce((s,st)=>s+plGetIndTarget(st),0);
+        if(!sumInd&&!teamTarget)return'';
+        const diff=sumInd-teamTarget;
+        const absDiff=Math.abs(diff);
+        const isExact=absDiff<1;
+        const isOver=diff>0;
+        const sumColor=isExact?'#2e7d32':isOver?'#e65100':'#c62828';
+        const icon=isExact?'✅':isOver?'⚠️':'❗';
+        const msg=isExact?'กระจายครบแล้ว':isOver?`เกิน ${Math.round(absDiff).toLocaleString('en-US')}฿`:`ขาดอยู่ ${Math.round(absDiff).toLocaleString('en-US')}฿`;
+        return`<div style="margin-top:16px;padding:12px 16px;border-radius:8px;background:#f9fafb;border:1px solid #e0e3e9;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <div style="font-size:13px;color:#676879;">รายคนรวม</div>
+          <div style="font-size:15px;font-weight:700;color:#1d2026;">${Math.round(sumInd).toLocaleString('en-US')}฿</div>
+          ${teamTarget?`<div style="font-size:12px;color:#c5c7d4;">vs ทีม</div><div style="font-size:15px;font-weight:700;color:#1d2026;">${Math.round(teamTarget).toLocaleString('en-US')}฿</div><div style="font-size:13px;font-weight:600;color:${sumColor};">${icon} ${msg}</div>`:''}
+        </div>`;
+      })()}
     </div>`;
 
   // Gap analysis vs team target
