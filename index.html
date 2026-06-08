@@ -2667,9 +2667,11 @@ function renderPipeline(){
   const pipelineVsTarget=teamTarget>0?totalPipeline/teamTarget:null;
   const rrVsTarget=teamTarget>0?totalRR/teamTarget:null;
 
+  const rrVsPipeline=totalPipeline>0?totalRR/totalPipeline:null;
+
   const fmtB=v=>{if(!v)return'—';if(v>=1000000)return(v/1000000).toFixed(1)+'M';if(v>=1000)return Math.round(v/1000)+'K';return Math.round(v).toLocaleString();}
+  const fmtFull=v=>{if(!v&&v!==0)return'—';const sign=v<0?'-':v>0?'+':'';return sign+Math.round(Math.abs(v)).toLocaleString('en-US');}
   const barColor=(v)=>{if(!v)return'#c5c7d4';if(v>=0.9)return'#2e7d32';if(v>=0.6)return'#f59f0b';return'#e44258';}
-  const pctBg=(v)=>{if(!v)return'background:#f4f5f7;color:#676879;';if(v>=0.9)return'background:#e8f5e9;color:#2e7d32;';if(v>=0.6)return'background:#fff8e1;color:#e65100;';return'background:#ffebee;color:#c62828;';}
 
   // Summary cards
   const summaryHtml=`
@@ -2730,26 +2732,49 @@ function renderPipeline(){
       })()}
     </div>`;
 
-  // Gap analysis vs team target
+  // Gap analysis vs team target — helper to build one rich row
+  function _gapRow(icon,title,v1Lbl,v1,v2Lbl,v2,ratio,mode){
+    const gap=v1-v2;
+    const pct=ratio!==null?(ratio-1)*100:null;
+    const pctTxt=pct!==null?(pct>=0?'+':'')+Math.abs(pct).toFixed(1)+'%':'—';
+    let pctColor,pctBgC,barC,subTxt;
+    if(mode==='rrVsPl'){
+      pctColor=pct!==null&&pct>=0?'#2e7d32':'#0073ea';
+      pctBgC=pct!==null&&pct>=0?'#e8f5e9':'#e8f0fe';
+      barC=pct!==null&&pct>=0?'#2e7d32':'#0073ea';
+      subTxt=gap>=0?'Run rate สูงกว่า pipeline — ร้านที่ยังไม่ได้ log deal อาจซื้ออยู่แล้ว ควร capture เพิ่ม':'Pipeline สูงกว่า run rate — opportunity ที่ log ไว้ยังรอ convert เป็น GMV';
+    } else {
+      pctColor=pct===null?'#676879':pct>=0?'#2e7d32':pct>=-20?'#e65100':'#c62828';
+      pctBgC=pct===null?'#f4f5f7':pct>=0?'#e8f5e9':pct>=-20?'#fff8e1':'#ffebee';
+      barC=ratio===null?'#c5c7d4':ratio>=0.9?'#2e7d32':ratio>=0.6?'#f59f0b':'#e44258';
+      const coverPct=ratio!==null?Math.round(ratio*100):0;
+      subTxt=mode==='pl'
+        ?(gap<0?`Pipeline cover target ${coverPct}% — ต้องหา opportunity เพิ่ม ${Math.round(-gap).toLocaleString('en-US')}฿`:`Pipeline เกิน target ${Math.round(gap).toLocaleString('en-US')}฿ 🎉`)
+        :(gap<0?`Run rate cover target ${coverPct}% — ถ้า conversion rate คงที่ ยังขาด ${Math.round(-gap).toLocaleString('en-US')}฿`:`Run rate เกิน target ${Math.round(gap).toLocaleString('en-US')}฿ แล้ว 🎉`);
+    }
+    const gapValColor=gap>=0?'#2e7d32':'#c62828';
+    const barW=Math.min(100,Math.round((ratio||0)*100));
+    return`<div class="pl-gap-row" style="flex-direction:column;align-items:stretch;gap:8px;">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <div style="font-size:13px;font-weight:700;color:#1d2026;min-width:200px;flex-shrink:0;">${icon} ${title}</div>
+        <div style="display:flex;gap:16px;flex:1;flex-wrap:wrap;align-items:center;">
+          <span style="font-size:12px;color:#676879;">${v1Lbl} <strong style="color:#1d2026;">${Math.round(v1).toLocaleString('en-US')}฿</strong></span>
+          <span style="font-size:12px;color:#676879;">${v2Lbl} <strong style="color:#1d2026;">${Math.round(v2).toLocaleString('en-US')}฿</strong></span>
+          <span style="font-size:12px;color:${gapValColor};">Gap <strong>${fmtFull(gap)}฿</strong></span>
+        </div>
+        <div style="font-size:12px;font-weight:700;padding:3px 10px;border-radius:6px;min-width:64px;text-align:center;white-space:nowrap;background:${pctBgC};color:${pctColor};">${pctTxt}</div>
+      </div>
+      <div style="height:8px;background:#e0e3e9;border-radius:4px;overflow:hidden;"><div style="height:100%;border-radius:4px;background:${barC};width:${barW}%;transition:width .4s;"></div></div>
+      <div style="font-size:11px;color:${pctColor};font-style:italic;">${subTxt}</div>
+    </div>`;
+  }
+
   const gapHtml=teamTarget>0?`
     <div class="pl-section" style="margin-bottom:16px;">
       <div class="pl-section-title">pipeline vs runrate vs target — gap analysis</div>
-      <div class="pl-gap-row">
-        <div style="display:flex;flex-direction:column;min-width:200px;gap:2px;">
-          <div style="font-size:13px;font-weight:600;color:#1d2026;">🏦 Pipeline vs Target</div>
-          <div style="font-size:11px;color:#676879;">Pipeline ${fmtB(totalPipeline)}฿ · Target ${fmtB(teamTarget)}฿ · Gap ${fmtB(totalPipeline-teamTarget)}฿</div>
-        </div>
-        <div class="pl-bar-wrap"><div class="pl-bar" style="width:${Math.min(100,Math.round((pipelineVsTarget||0)*100))}%;background:${barColor(pipelineVsTarget)};"></div></div>
-        <div class="pl-gap-pct" style="${pctBg(pipelineVsTarget)}">${Math.round((pipelineVsTarget||0)*100)}%</div>
-      </div>
-      <div class="pl-gap-row">
-        <div style="display:flex;flex-direction:column;min-width:200px;gap:2px;">
-          <div style="font-size:13px;font-weight:600;color:#1d2026;">↗ Run rate vs Target</div>
-          <div style="font-size:11px;color:#676879;">Run rate ${fmtB(totalRR)}฿ · Target ${fmtB(teamTarget)}฿ · Gap ${fmtB(totalRR-teamTarget)}฿</div>
-        </div>
-        <div class="pl-bar-wrap"><div class="pl-bar" style="width:${Math.min(100,Math.round((rrVsTarget||0)*100))}%;background:${barColor(rrVsTarget)};"></div></div>
-        <div class="pl-gap-pct" style="${pctBg(rrVsTarget)}">${Math.round((rrVsTarget||0)*100)}%</div>
-      </div>
+      ${_gapRow('🏦','Pipeline vs Target','Pipeline',totalPipeline,'Target',teamTarget,pipelineVsTarget,'pl')}
+      ${_gapRow('↗','Run rate vs Target','Run rate',totalRR,'Target',teamTarget,rrVsTarget,'rr')}
+      ${_gapRow('✓','Run rate vs Pipeline (Diff)','Run rate',totalRR,'Pipeline',totalPipeline,rrVsPipeline,'rrVsPl')}
     </div>`:'<div class="pl-section" style="margin-bottom:16px;text-align:center;color:#c5c7d4;padding:24px;font-size:13px;">กรอก Team Target เพื่อดู gap analysis</div>';
 
   // Opty cards table (no per-opty target)
