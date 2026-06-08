@@ -2836,6 +2836,17 @@ function renderPipeline(){
       ${_gapRow('✓','Run rate vs Pipeline (Diff)','Run rate',totalRR,'Pipeline',totalPipeline,rrVsPipeline,'rrVsPl')}
     </div>`:'<div class="pl-section" style="margin-bottom:16px;text-align:center;color:#c5c7d4;padding:24px;font-size:13px;">กรอก Team Target เพื่อดู gap analysis</div>';
 
+  // Fuzzy account name lookup for RR
+  function _normAcct(s){return(s||'').replace(/บริษัท\s*/g,'').replace(/เครือ\s*/g,'').replace(/จำกัด.*/,'').replace(/\s+/g,' ').trim();}
+  function _findGMVAcct(name){
+    if(!name)return null;
+    let r=gmv.find(x=>x.account_name===name);if(r)return r;
+    const n=_normAcct(name);if(!n)return null;
+    r=gmv.find(x=>_normAcct(x.account_name)===n);if(r)return r;
+    if(n.length>4)r=gmv.find(x=>{const xn=_normAcct(x.account_name);return xn.includes(n)||n.includes(xn);});
+    return r||null;
+  }
+
   // Opty cards table (no per-opty target)
   const tableRows=allCards.length?allCards.map(c=>{
     const stCls=plStatusClass(c._st);
@@ -2843,7 +2854,7 @@ function renderPipeline(){
     const lostReason=plGetLostReason(c.id);
     const lostCell=c._st==='Lost'?`<input class="pl-lost-inp" value="${(lostReason||'').replace(/"/g,'&quot;')}" placeholder="เหตุผล..." onchange="plSaveLostReason('${c.id}',this.value)" onblur="plSaveLostReason('${c.id}',this.value)">`:`<span style="color:#c5c7d4;font-size:12px;">—</span>`;
     const dot=colMap[c._staff]||'#c5c7d4';
-    const acctGMV=gmv.find(r=>r.account_name===c._acct);
+    const acctGMV=_findGMVAcct(c._acct);
     const acctRR=acctGMV?acctGMV.runrate:null;
     return`<tr>
       <td><div style="font-size:13px;font-weight:500;color:#1d2026;">${c.title||'—'}</div>${c._acct?`<div style="font-size:12px;color:#0073ea;margin-top:2px;font-weight:500;">${c._acct}</div>`:''}<div style="font-size:11px;color:#676879;margin-top:2px;display:flex;align-items:center;gap:4px;"><span style="width:6px;height:6px;border-radius:50%;background:${dot};display:inline-block;"></span>${c._staff}${c.category?' · '+c.category:''}</div></td>
