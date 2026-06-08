@@ -2774,7 +2774,7 @@ function renderPipeline(){
   function _gapRow(icon,title,v1Lbl,v1,v2Lbl,v2,ratio,mode){
     const gap=v1-v2;
     const pct=ratio!==null?(ratio-1)*100:null;
-    const pctTxt=pct!==null?(pct>=0?'+':'')+Math.abs(pct).toFixed(1)+'%':'—';
+    const pctTxt=pct!==null?(pct>=0?'+':'')+pct.toFixed(1)+'%':'—';
     let pctColor,pctBgC,barC,subTxt;
     if(mode==='rrVsPl'){
       pctColor=pct!==null&&pct>=0?'#2e7d32':'#0073ea';
