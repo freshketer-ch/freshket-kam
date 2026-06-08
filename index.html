@@ -322,8 +322,13 @@ html,body{height:100%;font-family:'Figtree',sans-serif;font-size:14px;background
 .pl-st-won{background:#e8f5e9;color:#2e7d32;}
 .pl-st-lost{background:#ffebee;color:#c62828;}
 .pl-bought{font-size:12px;font-weight:600;}
-.pl-target-inp{width:80px;font-size:12px;padding:4px 8px;border-radius:6px;border:1px solid #e0e3e9;text-align:right;font-family:'Figtree',sans-serif;}
-.pl-lost-inp{width:120px;font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid #e0e3e9;font-family:'Figtree',sans-serif;color:#c62828;}
+.pl-target-inp-big{width:140px;font-size:16px;font-weight:700;padding:8px 12px;border-radius:8px;border:2px solid #c5c7d4;text-align:right;font-family:'Figtree',sans-serif;background:#fafafa;}
+.pl-target-inp-big:focus{border-color:#0073ea;outline:none;background:#fff;}
+.pl-ind-inp{width:100px;font-size:13px;padding:4px 8px;border-radius:6px;border:1px solid #e0e3e9;text-align:right;font-family:'Figtree',sans-serif;}
+.pl-ind-inp:focus{border-color:#0073ea;outline:none;}
+.pl-target-row{display:flex;align-items:center;gap:12px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #f0f2f5;}
+.pl-target-row:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
+.pl-lost-inp{width:140px;font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid #e0e3e9;font-family:'Figtree',sans-serif;color:#c62828;}
 
 </style>
 </head>
@@ -2606,8 +2611,10 @@ async function deleteOptyCard(id){
 }
 
 // ── Pipeline Tab ──
-function plGetTarget(id){return parseFloat(localStorage.getItem('fk_pl_target_'+id)||'0');}
-function plSaveTarget(id,val){localStorage.setItem('fk_pl_target_'+id,val);renderPipeline();}
+function plGetTeamTarget(){return parseFloat(localStorage.getItem('fk_pl_team_target_'+activeTeam)||'0');}
+function plSaveTeamTarget(val){localStorage.setItem('fk_pl_team_target_'+activeTeam,String(parseFloat(val)||0));renderPipeline();}
+function plGetIndTarget(staff){return parseFloat(localStorage.getItem('fk_pl_ind_'+activeTeam+'_'+encodeURIComponent(staff))||'0');}
+function plSaveIndTarget(staff,val){localStorage.setItem('fk_pl_ind_'+activeTeam+'_'+encodeURIComponent(staff),String(parseFloat(val)||0));renderPipeline();}
 function plGetLostReason(id){return localStorage.getItem('fk_pl_lostreason_'+id)||'';}
 function plSaveLostReason(id,val){localStorage.setItem('fk_pl_lostreason_'+id,val);}
 function plStatusClass(s){
@@ -2621,65 +2628,97 @@ function plStatusLabel(s){
   const m={'open':'Open','won':'Won','lost':'Lost','stuck':'Stuck','Open':'Open','Won':'Won','Lost':'Lost','Stuck':'Stuck','closed':'Won'};
   return m[s]||s||'Open';
 }
-function plGetRunrate(rowKey){
-  const parts=rowKey.split('||');
-  const acct=parts[1]||'';
-  const gmv=(window._gmvOverride||GMV_EMBEDDED);
-  const r=gmv.find(d=>d.account_name===acct);
-  return r?r.runrate:0;
-}
 function renderPipeline(){
   const el=document.getElementById('pipeline-content');
   if(!el)return;
 
-  // Collect all opty cards for current team
-  const allCards=[];
   const gmv=window._gmvOverride||GMV_EMBEDDED;
   const staffList=currentStaffOrder();
+  const colMap=currentGroupColors();
 
+  // Total RR = sum ALL accounts in GMV for this team (not just opty card accounts)
+  const allTeamGMV=gmv.filter(r=>staffList.includes(r.staff));
+  const totalRR=allTeamGMV.reduce((s,r)=>s+(r.runrate||0),0);
+
+  // Per-staff RR breakdown
+  const staffRR={};
+  for(const s of staffList) staffRR[s]=0;
+  for(const r of allTeamGMV) staffRR[r.staff]=(staffRR[r.staff]||0)+(r.runrate||0);
+
+  // Collect all opty cards for current team
+  const allCards=[];
   for(const [rk,cards] of Object.entries(optyCardsCache)){
     const parts=rk.split('||');
     const staff=parts[0]||'';
     if(!staffList.includes(staff))continue;
     for(const c of cards){
-      const rr=plGetRunrate(rk);
-      const tgt=plGetTarget(c.id);
       const st=plStatusLabel(c.status);
-      allCards.push({...c, _rk:rk, _staff:staff, _acct:parts[1]||'', _rr:rr, _tgt:tgt, _st:st});
+      allCards.push({...c, _rk:rk, _staff:staff, _acct:parts[1]||'', _st:st});
     }
   }
 
-  // Summaries
   const totalPipeline=allCards.reduce((s,c)=>s+(c.value||0),0);
-  const totalRR=allCards.reduce((s,c)=>s+(c._rr||0),0);
-  const totalTarget=allCards.reduce((s,c)=>s+(c._tgt||0),0);
-  const wonCards=allCards.filter(c=>c._st==='Won');
-  const wonGMV=wonCards.reduce((s,c)=>s+(c._rr||0),0);
+  const wonPipeline=allCards.filter(c=>c._st==='Won').reduce((s,c)=>s+(c.value||0),0);
+  const teamTarget=plGetTeamTarget();
 
-  const pipelineVsTarget=totalTarget>0?totalPipeline/totalTarget:null;
-  const rrVsTarget=totalTarget>0?totalRR/totalTarget:null;
-  const rrVsPipeline=totalPipeline>0?totalRR/totalPipeline:null;
+  const pipelineVsTarget=teamTarget>0?totalPipeline/teamTarget:null;
+  const rrVsTarget=teamTarget>0?totalRR/teamTarget:null;
 
   const fmtB=v=>{if(!v)return'—';if(v>=1000000)return(v/1000000).toFixed(1)+'M';if(v>=1000)return Math.round(v/1000)+'K';return Math.round(v).toLocaleString();}
-  const pctStr=(v,inv=false)=>{if(v===null)return'—';const p=Math.round(v*100);const pos=inv?v>=1:v>=1;return(pos?'+':'')+p+'%';}
   const barColor=(v)=>{if(!v)return'#c5c7d4';if(v>=0.9)return'#2e7d32';if(v>=0.6)return'#f59f0b';return'#e44258';}
   const pctBg=(v)=>{if(!v)return'background:#f4f5f7;color:#676879;';if(v>=0.9)return'background:#e8f5e9;color:#2e7d32;';if(v>=0.6)return'background:#fff8e1;color:#e65100;';return'background:#ffebee;color:#c62828;';}
 
+  // Summary cards
   const summaryHtml=`
     <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
-      <div class="pl-card"><div class="pl-card-label">Target (month)</div><div class="pl-card-val">${totalTarget?fmtB(totalTarget)+'฿':'—'}</div><div style="font-size:11px;color:#676879;margin-top:4px;">฿ / เดือน (ผลรวม target)</div></div>
+      <div class="pl-card"><div class="pl-card-label">Team Target</div><div class="pl-card-val">${teamTarget?fmtB(teamTarget)+'฿':'—'}</div><div style="font-size:11px;color:#676879;margin-top:4px;">ตั้งเป้าทีม / เดือน</div></div>
       <div class="pl-card"><div class="pl-card-label">Pipeline</div><div class="pl-card-val" style="color:#0073ea;">${fmtB(totalPipeline)}฿</div><div style="font-size:11px;color:#676879;margin-top:4px;">opportunity รวม</div></div>
-      <div class="pl-card"><div class="pl-card-label">Run rate</div><div class="pl-card-val" style="color:#0073ea;">${fmtB(totalRR)}฿</div><div style="font-size:11px;color:#676879;margin-top:4px;">GMV ปัจจุบัน</div></div>
-      <div class="pl-card"><div class="pl-card-label">Won GMV</div><div class="pl-card-val green">${fmtB(wonGMV)}฿</div><div style="font-size:11px;color:#676879;margin-top:4px;">ปิดแล้ว</div></div>
+      <div class="pl-card"><div class="pl-card-label">Run rate</div><div class="pl-card-val" style="color:#0073ea;">${fmtB(totalRR)}฿</div><div style="font-size:11px;color:#676879;margin-top:4px;">GMV ทุกร้าน (RR)</div></div>
+      <div class="pl-card"><div class="pl-card-label">Won Opty</div><div class="pl-card-val green">${fmtB(wonPipeline)}฿</div><div style="font-size:11px;color:#676879;margin-top:4px;">opportunity ปิดแล้ว</div></div>
     </div>`;
 
-  const gapHtml=totalTarget>0?`
+  // Target settings: team target + per-staff individual targets
+  const indTargetRows=staffList.map(s=>{
+    const rr=staffRR[s]||0;
+    const tgt=plGetIndTarget(s);
+    const pct=tgt>0?rr/tgt:null;
+    const dot=colMap[s]||'#c5c7d4';
+    const barHtml=tgt>0
+      ?`<div style="height:6px;background:#e0e3e9;border-radius:3px;flex:1;min-width:80px;overflow:hidden;"><div style="height:100%;border-radius:3px;background:${barColor(pct)};width:${Math.min(100,Math.round((pct||0)*100))}%;"></div></div>`
+      :'<div style="flex:1;"></div>';
+    const pctHtml=pct!==null?`<span style="font-size:12px;font-weight:700;color:${barColor(pct)};min-width:42px;text-align:right;">${Math.round(pct*100)}%</span>`:'<span style="min-width:42px;"></span>';
+    return`<div class="pl-target-row">
+      <div style="display:flex;align-items:center;gap:6px;min-width:100px;flex-shrink:0;">
+        <span style="width:8px;height:8px;border-radius:50%;background:${dot};display:inline-block;flex-shrink:0;"></span>
+        <span style="font-size:13px;font-weight:600;color:#1d2026;">${s}</span>
+      </div>
+      <div style="font-size:12px;color:#676879;min-width:90px;text-align:right;flex-shrink:0;">RR: ${fmtB(rr)}฿</div>
+      <input class="pl-ind-inp" type="number" placeholder="Target..." value="${tgt||''}" onchange="plSaveIndTarget('${s}',this.value)" onblur="plSaveIndTarget('${s}',this.value)">
+      ${barHtml}
+      ${pctHtml}
+    </div>`;
+  }).join('');
+
+  const targetSettingsHtml=`
+    <div class="pl-section" style="margin-bottom:16px;">
+      <div class="pl-section-title">🎯 ตั้งเป้า</div>
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:20px;border-bottom:2px solid #f0f2f5;">
+        <div style="font-size:14px;font-weight:700;color:#1d2026;min-width:100px;flex-shrink:0;">ทาเก็จทีม</div>
+        <input class="pl-target-inp-big" type="number" placeholder="0" value="${teamTarget||''}" onchange="plSaveTeamTarget(this.value)" onblur="plSaveTeamTarget(this.value)">
+        <div style="font-size:12px;color:#676879;">฿ / เดือน</div>
+      </div>
+      <div style="font-size:12px;font-weight:600;color:#676879;margin-bottom:12px;text-transform:uppercase;letter-spacing:.04em;">ทาเก็จรายคน</div>
+      ${indTargetRows}
+    </div>`;
+
+  // Gap analysis vs team target
+  const gapHtml=teamTarget>0?`
     <div class="pl-section" style="margin-bottom:16px;">
       <div class="pl-section-title">pipeline vs runrate vs target — gap analysis</div>
       <div class="pl-gap-row">
         <div style="display:flex;flex-direction:column;min-width:200px;gap:2px;">
           <div style="font-size:13px;font-weight:600;color:#1d2026;">🏦 Pipeline vs Target</div>
-          <div style="font-size:11px;color:#676879;">Pipeline ${fmtB(totalPipeline)}฿ · Target ${fmtB(totalTarget)}฿ · Gap ${fmtB(totalPipeline-totalTarget)}฿</div>
+          <div style="font-size:11px;color:#676879;">Pipeline ${fmtB(totalPipeline)}฿ · Target ${fmtB(teamTarget)}฿ · Gap ${fmtB(totalPipeline-teamTarget)}฿</div>
         </div>
         <div class="pl-bar-wrap"><div class="pl-bar" style="width:${Math.min(100,Math.round((pipelineVsTarget||0)*100))}%;background:${barColor(pipelineVsTarget)};"></div></div>
         <div class="pl-gap-pct" style="${pctBg(pipelineVsTarget)}">${Math.round((pipelineVsTarget||0)*100)}%</div>
@@ -2687,60 +2726,43 @@ function renderPipeline(){
       <div class="pl-gap-row">
         <div style="display:flex;flex-direction:column;min-width:200px;gap:2px;">
           <div style="font-size:13px;font-weight:600;color:#1d2026;">↗ Run rate vs Target</div>
-          <div style="font-size:11px;color:#676879;">Run rate ${fmtB(totalRR)}฿ · Target ${fmtB(totalTarget)}฿ · Gap ${fmtB(totalRR-totalTarget)}฿</div>
+          <div style="font-size:11px;color:#676879;">Run rate ${fmtB(totalRR)}฿ · Target ${fmtB(teamTarget)}฿ · Gap ${fmtB(totalRR-teamTarget)}฿</div>
         </div>
         <div class="pl-bar-wrap"><div class="pl-bar" style="width:${Math.min(100,Math.round((rrVsTarget||0)*100))}%;background:${barColor(rrVsTarget)};"></div></div>
         <div class="pl-gap-pct" style="${pctBg(rrVsTarget)}">${Math.round((rrVsTarget||0)*100)}%</div>
       </div>
-      <div class="pl-gap-row">
-        <div style="display:flex;flex-direction:column;min-width:200px;gap:2px;">
-          <div style="font-size:13px;font-weight:600;color:#1d2026;">✓ Run rate vs Pipeline (Diff)</div>
-          <div style="font-size:11px;color:#676879;">Run rate ${fmtB(totalRR)}฿ · Pipeline ${fmtB(totalPipeline)}฿ · Diff ${totalRR>=totalPipeline?'+':''}${fmtB(totalRR-totalPipeline)}฿</div>
-        </div>
-        <div class="pl-bar-wrap"><div class="pl-bar" style="width:${Math.min(100,Math.round((rrVsPipeline||0)*100))}%;background:${rrVsPipeline&&rrVsPipeline>=1?'#2e7d32':'#0073ea'};"></div></div>
-        <div class="pl-gap-pct" style="${rrVsPipeline&&rrVsPipeline>=1?'background:#e8f5e9;color:#2e7d32;':'background:#e8f0fe;color:#0073ea;'}">${rrVsPipeline?Math.round(rrVsPipeline*100)+'%':'—'}</div>
-      </div>
-    </div>`:'<div class="pl-section" style="margin-bottom:16px;text-align:center;color:#c5c7d4;padding:24px;font-size:13px;">กรอก Target ในตารางด้านล่างเพื่อดู gap analysis</div>';
+    </div>`:'<div class="pl-section" style="margin-bottom:16px;text-align:center;color:#c5c7d4;padding:24px;font-size:13px;">กรอก Team Target เพื่อดู gap analysis</div>';
 
+  // Opty cards table (no per-opty target)
   const tableRows=allCards.length?allCards.map(c=>{
     const stCls=plStatusClass(c._st);
-    const tgt=c._tgt;
-    const diff=c._rr&&tgt?c._rr-tgt:null;
-    const cover=c._rr&&tgt?c._rr/tgt:null;
-    const bought=c._st==='Won'?'<span class="pl-bought" style="color:#2e7d32;">✓ ซื้อแล้ว</span>':c._st==='Lost'?'<span class="pl-bought" style="color:#e44258;">✗ ไม่ซื้อ</span>':'<span class="pl-bought" style="color:#f59f0b;">⏰ ยังไม่ซื้อ</span>';
-    const diffHtml=diff!==null?`<span style="color:${diff>=0?'#2e7d32':'#e44258'};font-weight:600;">${diff>=0?'+':''}${Math.round(diff).toLocaleString()}</span>`:'—';
-    const coverHtml=cover!==null?`<div style="font-size:12px;font-weight:600;color:${cover>=0.9?'#2e7d32':cover>=0.6?'#e65100':'#e44258'};margin-bottom:3px;">${Math.round(cover*100)}%</div><div style="height:4px;background:#e0e3e9;border-radius:2px;width:60px;"><div style="height:100%;border-radius:2px;background:${cover>=0.9?'#2e7d32':cover>=0.6?'#f59f0b':'#e44258'};width:${Math.min(100,Math.round(cover*100))}%;"></div></div>`:'—';
+    const bought=c._st==='Won'?'<span class="pl-bought" style="color:#2e7d32;">✓ ซื้อแล้ว</span>':c._st==='Lost'?'<span class="pl-bought" style="color:#e44258;">✗ ไม่ซื้อ</span>':'<span class="pl-bought" style="color:#f59f0b;">⏰ รอ</span>';
     const lostReason=plGetLostReason(c.id);
     const lostCell=c._st==='Lost'?`<input class="pl-lost-inp" value="${(lostReason||'').replace(/"/g,'&quot;')}" placeholder="เหตุผล..." onchange="plSaveLostReason('${c.id}',this.value)" onblur="plSaveLostReason('${c.id}',this.value)">`:`<span style="color:#c5c7d4;font-size:12px;">—</span>`;
-    const colMap=currentGroupColors();
-    const dotColor=colMap[c._staff]||'#c5c7d4';
+    const dot=colMap[c._staff]||'#c5c7d4';
+    const acctGMV=gmv.find(r=>r.account_name===c._acct);
+    const acctRR=acctGMV?acctGMV.runrate:null;
     return`<tr>
-      <td><div style="font-size:13px;font-weight:500;color:#1d2026;">${c.title||'—'}</div><div style="font-size:11px;color:#676879;margin-top:2px;display:flex;align-items:center;gap:4px;"><span style="width:6px;height:6px;border-radius:50%;background:${dotColor};display:inline-block;"></span>${c._staff}${c.category?' · '+c.category:''}</div></td>
+      <td><div style="font-size:13px;font-weight:500;color:#1d2026;">${c.title||'—'}</div><div style="font-size:11px;color:#676879;margin-top:2px;display:flex;align-items:center;gap:4px;"><span style="width:6px;height:6px;border-radius:50%;background:${dot};display:inline-block;"></span>${c._staff}${c.category?' · '+c.category:''}</div></td>
       <td><span class="pl-status ${stCls}">${c._st}</span></td>
       <td style="text-align:right;font-weight:500;">${c.value?Math.round(c.value).toLocaleString():'—'}</td>
-      <td style="text-align:right;font-weight:500;color:#0073ea;">${c._rr?Math.round(c._rr).toLocaleString():'—'}</td>
-      <td><input class="pl-target-inp" type="number" value="${tgt||''}" placeholder="0" onchange="plSaveTarget('${c.id}',this.value)" onblur="plSaveTarget('${c.id}',this.value)"></td>
-      <td style="text-align:right;">${diffHtml}</td>
-      <td>${coverHtml}</td>
+      <td style="text-align:right;font-weight:600;color:#0073ea;">${acctRR?Math.round(acctRR).toLocaleString():'—'}</td>
       <td>${bought}</td>
       <td>${lostCell}</td>
     </tr>`;
-  }).join(''):'<tr><td colspan="9" style="text-align:center;color:#c5c7d4;padding:24px;">ยังไม่มี opty cards — กด 🔶 ในหน้า Tracker เพื่อเพิ่ม</td></tr>';
+  }).join(''):'<tr><td colspan="6" style="text-align:center;color:#c5c7d4;padding:24px;">ยังไม่มี opty cards — กด 🔶 ในหน้า Tracker เพื่อเพิ่ม</td></tr>';
 
-  el.innerHTML=summaryHtml+gapHtml+`
+  el.innerHTML=summaryHtml+targetSettingsHtml+gapHtml+`
     <div class="pl-section">
       <div class="pl-section-title">pipeline รายร้าน</div>
       <div style="overflow-x:auto;">
         <table class="pl-tbl">
           <thead><tr>
-            <th style="min-width:200px;">ร้าน</th>
+            <th style="min-width:200px;">ร้าน / opty</th>
             <th>สถานะ</th>
-            <th style="text-align:right;">Opportunity</th>
-            <th style="text-align:right;">Run rate</th>
-            <th>Target</th>
-            <th style="text-align:right;">Diff (RR vs T)</th>
-            <th>Cover target</th>
-            <th>ซื้อแล้ว?</th>
+            <th style="text-align:right;">Opp value</th>
+            <th style="text-align:right;">Run rate (RR)</th>
+            <th>สถานะซื้อ</th>
             <th>เหตุผล lost</th>
           </tr></thead>
           <tbody>${tableRows}</tbody>
