@@ -1284,6 +1284,9 @@ async function loadAll(){
     const dRows=await sbGet('fk_week_data','');
     weekDataCache={};
     dRows.forEach(r=>{if(!weekDataCache[r.week_id])weekDataCache[r.week_id]={};weekDataCache[r.week_id][r.row_key]={update:r.upd||'',sku:r.sku||'',progress:r.progress||''};});
+    // Pipeline config stored under week_id='__pipeline__'
+    plConfigCache={};
+    if(weekDataCache['__pipeline__']){Object.entries(weekDataCache['__pipeline__']).forEach(([k,v])=>{plConfigCache[k]=v.update||'';});}
     const oRows=await sbGet('fk_overrides','');
     dataOverrides={};
     oRows.forEach(r=>{dataOverrides[r.row_key]=r.fields;});
@@ -2612,16 +2615,28 @@ async function deleteOptyCard(id){
   }catch(e){showSyncErr();console.error(e);}
 }
 
-// ── Pipeline Tab ──
-function plGetTeamTarget(){return parseFloat(localStorage.getItem('fk_pl_team_target_'+activeTeam)||'0');}
-function plSaveTeamTarget(val){localStorage.setItem('fk_pl_team_target_'+activeTeam,String(parseFloat(String(val).replace(/,/g,''))||0));renderPipeline();}
-function plGetIndTarget(staff){return parseFloat(localStorage.getItem('fk_pl_ind_'+activeTeam+'_'+encodeURIComponent(staff))||'0');}
-function plSaveIndTarget(staff,val){localStorage.setItem('fk_pl_ind_'+activeTeam+'_'+encodeURIComponent(staff),String(parseFloat(String(val).replace(/,/g,''))||0));renderPipeline();}
+// ── Pipeline Tab — Supabase-backed config (syncs across devices) ──
+let plConfigCache={};
+function _plConfigGet(key){
+  if(plConfigCache[key]!==undefined&&plConfigCache[key]!=='')return plConfigCache[key];
+  return localStorage.getItem('fk_pl_'+key)||''; // backward compat fallback
+}
+function _plSaveConfigBg(key,strVal){
+  plConfigCache[key]=strVal;
+  if(!weekDataCache['__pipeline__'])weekDataCache['__pipeline__']={};
+  weekDataCache['__pipeline__'][key]={update:strVal,sku:'',progress:''};
+  sbUpsert('fk_week_data',{week_id:'__pipeline__',row_key:key,upd:strVal,sku:'',progress:''})
+    .catch(e=>console.error('pl config save:',e));
+}
+function plGetTeamTarget(){return parseFloat(_plConfigGet('team_target_'+activeTeam)||'0');}
+function plSaveTeamTarget(val){const n=parseFloat(String(val).replace(/,/g,''))||0;_plSaveConfigBg('team_target_'+activeTeam,String(n));renderPipeline();}
+function plGetIndTarget(staff){return parseFloat(_plConfigGet('ind_'+activeTeam+'_'+encodeURIComponent(staff))||'0');}
+function plSaveIndTarget(staff,val){const n=parseFloat(String(val).replace(/,/g,''))||0;_plSaveConfigBg('ind_'+activeTeam+'_'+encodeURIComponent(staff),String(n));renderPipeline();}
 function plFmtInput(v){return v?Math.round(v).toLocaleString('en-US'):'';}
 function plParseInput(s){return parseFloat(String(s).replace(/,/g,''))||0;}
-function plGetLostReason(id){return localStorage.getItem('fk_pl_lostreason_'+id)||'';}
-function plSaveLostReason(id,val){localStorage.setItem('fk_pl_lostreason_'+id,val);}
-function plTargetsOpen(){return localStorage.getItem('fk_pl_targets_open')!=='0';}
+function plGetLostReason(id){return _plConfigGet('lost_'+id)||'';}
+function plSaveLostReason(id,val){_plSaveConfigBg('lost_'+id,val);}
+function plTargetsOpen(){return localStorage.getItem('fk_pl_targets_open')!=='0';} // UI pref stays local
 function plToggleTargets(){localStorage.setItem('fk_pl_targets_open',plTargetsOpen()?'0':'1');renderPipeline();}
 function plStatusClass(s){
   const st=(s||'').toLowerCase();
