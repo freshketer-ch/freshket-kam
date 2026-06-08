@@ -2662,7 +2662,22 @@ function renderPipeline(){
     }
   }
 
-  const totalPipeline=allCards.reduce((s,c)=>s+(c.value||0),0);
+  // ── Baseline: Jun MTD + min daily historical × remaining days ──
+  const today=new Date();
+  const daysElapsed=(today.getMonth()===5)?today.getDate():30; // June = month 5
+  const daysRemaining=Math.max(0,30-daysElapsed);
+  let junMTD=0, minDailySum=0;
+  for(const r of allTeamGMV){
+    junMTD+=(r.Jun||0);
+    // min daily = min of non-zero months Jan-May ÷ 30
+    const months=[r.Jan,r.Feb,r.Mar,r.Apr,r.May].filter(v=>v&&v>0);
+    if(months.length>0) minDailySum+=Math.min(...months)/30;
+  }
+  const baseline=junMTD+(minDailySum*daysRemaining);
+
+  const openOpties=allCards.filter(c=>c._st==='Open'||c._st==='Stuck');
+  const openOpityVal=openOpties.reduce((s,c)=>s+(c.value||0),0);
+  const totalPipeline=baseline+openOpityVal;
   const wonPipeline=allCards.filter(c=>c._st==='Won').reduce((s,c)=>s+(c.value||0),0);
   const teamTarget=plGetTeamTarget();
 
@@ -2679,7 +2694,15 @@ function renderPipeline(){
   const summaryHtml=`
     <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
       <div class="pl-card"><div class="pl-card-label">Team Target</div><div class="pl-card-val">${teamTarget?fmtB(teamTarget)+'฿':'—'}</div><div style="font-size:11px;color:#676879;margin-top:4px;">ตั้งเป้าทีม / เดือน</div></div>
-      <div class="pl-card"><div class="pl-card-label">Pipeline</div><div class="pl-card-val" style="color:#0073ea;">${fmtB(totalPipeline)}฿</div><div style="font-size:11px;color:#676879;margin-top:4px;">opportunity รวม</div></div>
+      <div class="pl-card" style="border-color:#0073ea22;">
+        <div class="pl-card-label">Pipeline</div>
+        <div class="pl-card-val" style="color:#0073ea;">${fmtB(totalPipeline)}฿</div>
+        <div style="font-size:10px;color:#676879;margin-top:6px;display:flex;flex-direction:column;gap:2px;">
+          <span>📌 Baseline <strong>${fmtB(baseline)}฿</strong></span>
+          <span style="padding-left:8px;color:#888;">Jun MTD ${fmtB(junMTD)}฿ + min×${daysRemaining}d</span>
+          <span>🔶 Opty <strong>${fmtB(openOpityVal)}฿</strong></span>
+        </div>
+      </div>
       <div class="pl-card"><div class="pl-card-label">Run rate</div><div class="pl-card-val" style="color:#0073ea;">${fmtB(totalRR)}฿</div><div style="font-size:11px;color:#676879;margin-top:4px;">GMV ทุกร้าน (RR)</div></div>
       <div class="pl-card"><div class="pl-card-label">Won Opty</div><div class="pl-card-val green">${fmtB(wonPipeline)}฿</div><div style="font-size:11px;color:#676879;margin-top:4px;">opportunity ปิดแล้ว</div></div>
     </div>`;
