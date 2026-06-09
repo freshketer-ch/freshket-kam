@@ -2617,6 +2617,9 @@ async function deleteOptyCard(id){
 
 // ── Pipeline Tab — Supabase-backed config (syncs across devices) ──
 let plConfigCache={};
+let plSortCol=null, plSortDir='asc';
+function plToggleSort(col){if(plSortCol===col){plSortDir=plSortDir==='asc'?'desc':'asc';}else{plSortCol=col;plSortDir='asc';}renderPipeline();}
+function _plSortIcon(col){if(plSortCol!==col)return'<span style="opacity:.35;font-size:10px;margin-left:3px;">⇅</span>';return plSortDir==='asc'?'<span style="font-size:10px;margin-left:3px;">▲</span>':'<span style="font-size:10px;margin-left:3px;">▼</span>';}
 function _plConfigGet(key){
   if(plConfigCache[key]!==undefined&&plConfigCache[key]!=='')return plConfigCache[key];
   return localStorage.getItem('fk_pl_'+key)||''; // backward compat fallback
@@ -2842,6 +2845,16 @@ function renderPipeline(){
     return r||null;
   }
 
+  // Sort allCards by selected column
+  if(plSortCol){
+    const mul=plSortDir==='asc'?1:-1;
+    allCards.sort((a,b)=>{
+      const va=(plSortCol==='staff'?a._staff:a._st)||'';
+      const vb=(plSortCol==='staff'?b._staff:b._st)||'';
+      return mul*va.localeCompare(vb,'th');
+    });
+  }
+
   // Opty cards table (no per-opty target)
   const tableRows=allCards.length?allCards.map(c=>{
     const stCls=plStatusClass(c._st);
@@ -2871,8 +2884,8 @@ function renderPipeline(){
           <thead><tr>
             <th style="min-width:200px;">ร้าน / opty</th>
             <th>Category</th>
-            <th>Staff</th>
-            <th>สถานะ</th>
+            <th style="cursor:pointer;user-select:none;white-space:nowrap;" onclick="plToggleSort('staff')">Staff${_plSortIcon('staff')}</th>
+            <th style="cursor:pointer;user-select:none;white-space:nowrap;" onclick="plToggleSort('status')">สถานะ${_plSortIcon('status')}</th>
             <th style="text-align:right;">Opp value</th>
             <th style="text-align:right;">RR ทั้งร้าน</th>
             <th>สถานะซื้อ</th>
