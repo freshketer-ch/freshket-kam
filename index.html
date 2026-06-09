@@ -1291,7 +1291,7 @@ async function loadAll(){
     dataOverrides={};
     oRows.forEach(r=>{dataOverrides[r.row_key]=r.fields;});
     try{const aiRows=await sbGet('fk_action_items','order=created_at.asc');actionItemsCache={};aiRows.forEach(r=>{if(!actionItemsCache[r.row_key])actionItemsCache[r.row_key]=[];actionItemsCache[r.row_key].push(r);});}catch(e){actionItemsCache={};console.warn('fk_action_items not ready:',e.message);}
-    try{const ocRows=await sbGet('fk_opty_cards','order=created_at.asc');optyCardsCache={};ocRows.forEach(r=>{if(!optyCardsCache[r.row_key])optyCardsCache[r.row_key]=[];optyCardsCache[r.row_key].push(r);});}catch(e){optyCardsCache={};console.warn('fk_opty_cards not ready:',e.message);}
+    try{const ocRows=await sbGet('fk_opty_cards','order=created_at.asc');optyCardsCache={};ocRows.forEach(r=>{if(!r.id)r.id='opty-'+r.row_key+'-'+(r.created_at||Date.now());if(!optyCardsCache[r.row_key])optyCardsCache[r.row_key]=[];optyCardsCache[r.row_key].push(r);});}catch(e){optyCardsCache={};console.warn('fk_opty_cards not ready:',e.message);}
     activeWeekId=localStorage.getItem('fk_active_week')||weeks[0].id;
     if(!weeks.find(w=>w.id===activeWeekId))activeWeekId=weeks[0].id;
     hideLoader();
@@ -2537,7 +2537,7 @@ function renderOptyList(){
           </select>
           <div style="display:flex;gap:6px;">
             <button class="fk-cancel-btn" onclick="_editingOptyId='';renderOptyList()">ยกเลิก</button>
-            <button class="fk-save-btn" onclick="saveEditOpty('${c.id}')">💾 บันทึก</button>
+            <button class="fk-save-btn" data-id="${c.id}" onclick="saveEditOpty(this.dataset.id)">💾 บันทึก</button>
           </div>
         </div>
       </div>`;
@@ -2546,8 +2546,8 @@ function renderOptyList(){
       <div style="display:flex;align-items:center;justify-content:space-between;">
         <span style="font-size:13px;font-weight:600;color:#1d2026;">${c.title}</span>
         <div style="display:flex;gap:6px;align-items:center;">
-          <button class="fk-edit-btn" onclick="_editingOptyId='${c.id}';renderOptyList()" title="แก้ไข">✏️</button>
-          <button class="fk-del-btn" onclick="deleteOptyCard('${c.id}')">×</button>
+          <button class="fk-edit-btn" data-id="${c.id}" onclick="_editingOptyId=this.dataset.id;renderOptyList()" title="แก้ไข">✏️</button>
+          <button class="fk-del-btn" data-id="${c.id}" onclick="deleteOptyCard(this.dataset.id)">×</button>
         </div>
       </div>
       <div class="opty-card-meta">
