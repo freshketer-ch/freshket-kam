@@ -1286,6 +1286,11 @@ async function loadAll(){
     // Pipeline config stored under week_id='__pipeline__'
     plConfigCache={};
     if(weekDataCache['__pipeline__']){Object.entries(weekDataCache['__pipeline__']).forEach(([k,v])=>{plConfigCache[k]=v.update||'';});}
+    // Migrate localStorage → Supabase (one-time, for existing devices)
+    if(!weekDataCache['__pipeline__']||Object.keys(weekDataCache['__pipeline__']).length===0){
+      const lsKeys=['team_target_name','team_target_ploy','jun_trend_name','jun_trend_ploy'];
+      lsKeys.forEach(k=>{const v=localStorage.getItem('fk_pl_'+k);if(v&&v!==''){plConfigCache[k]=v;_plSaveConfigBg(k,v);}});
+    }
     // Load GMV data from Supabase (stored under week_id='__gmv__')
     if(weekDataCache['__gmv__']){
       GMV_EMBEDDED.length=0;
@@ -2743,7 +2748,7 @@ function renderPipeline(){
         <span style="font-size:13px;font-weight:600;color:#1d2026;">${s}</span>
       </div>
       <div style="font-size:12px;color:#676879;min-width:90px;text-align:right;flex-shrink:0;">RR: ${fmtB(rr)}฿</div>
-      <input class="pl-ind-inp" type="text" inputmode="numeric" placeholder="0" value="${plFmtInput(tgt)}" onfocus="this.value=this.value.replace(/,/g,'')" onchange="plSaveIndTarget('${s}',this.value)" onblur="plSaveIndTarget('${s}',this.value)"style="width:120px;">
+      <input class="pl-ind-inp" type="text" inputmode="numeric" placeholder="0" value="${plFmtInput(tgt)}" onfocus="this.value=this.value.replace(/,/g,'')" onchange="plSaveIndTarget('${s}',this.value)" onblur="plSaveIndTarget('${s}',this.value)" onkeydown="if(event.key==='Enter'){this.blur();}" style="width:120px;">
       ${barHtml}
       ${pctHtml}
     </div>`;
@@ -2770,12 +2775,12 @@ function renderPipeline(){
       ${_tgtOpen?`
       <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #f0f2f5;">
         <div style="font-size:14px;font-weight:700;color:#1d2026;min-width:100px;flex-shrink:0;">ทาเก็จทีม</div>
-        <input class="pl-target-inp-big" type="text" inputmode="numeric" placeholder="0" value="${plFmtInput(teamTarget)}" onfocus="this.value=this.value.replace(/,/g,'')" onchange="plSaveTeamTarget(this.value)" onblur="plSaveTeamTarget(this.value)">
+        <input class="pl-target-inp-big" type="text" inputmode="numeric" placeholder="0" value="${plFmtInput(teamTarget)}" onfocus="this.value=this.value.replace(/,/g,'')" onchange="plSaveTeamTarget(this.value)" onblur="plSaveTeamTarget(this.value)" onkeydown="if(event.key==='Enter'){this.blur();}">
         <div style="font-size:12px;color:#676879;">฿ / เดือน</div>
       </div>
       <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:20px;border-bottom:2px solid #f0f2f5;">
         <div style="font-size:13px;font-weight:600;color:#676879;min-width:100px;flex-shrink:0;">June Trend <span style="font-weight:400;font-size:11px;">(vs May ปีก่อน)</span></div>
-        <input class="pl-ind-inp" type="text" inputmode="decimal" placeholder="3" value="${plGetTrend()}" style="width:70px;font-size:15px;font-weight:700;padding:6px 10px;" onchange="plSaveTrend(this.value)" onblur="plSaveTrend(this.value)">
+        <input class="pl-ind-inp" type="text" inputmode="decimal" placeholder="3" value="${plGetTrend()}" style="width:70px;font-size:15px;font-weight:700;padding:6px 10px;" onchange="plSaveTrend(this.value)" onblur="plSaveTrend(this.value)" onkeydown="if(event.key==='Enter'){this.blur();}">
         <div style="font-size:12px;color:#676879;">% &nbsp;→ Baseline = May GMV × ${junTrendPct>=0?'+':''}${junTrendPct}% = <strong>${fmtB(baseline)}฿</strong></div>
       </div>
       <div style="font-size:12px;font-weight:600;color:#676879;margin-bottom:12px;text-transform:uppercase;letter-spacing:.04em;">ทาเก็จรายคน</div>
@@ -2788,7 +2793,7 @@ function renderPipeline(){
       `:`
       <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
         <div style="font-size:13px;color:#676879;flex-shrink:0;">ทาเก็จทีม</div>
-        <input class="pl-target-inp-big" type="text" inputmode="numeric" placeholder="0" value="${plFmtInput(teamTarget)}" onfocus="this.value=this.value.replace(/,/g,'')" onchange="plSaveTeamTarget(this.value)" onblur="plSaveTeamTarget(this.value)" style="font-size:15px;padding:5px 10px;">
+        <input class="pl-target-inp-big" type="text" inputmode="numeric" placeholder="0" value="${plFmtInput(teamTarget)}" onfocus="this.value=this.value.replace(/,/g,'')" onchange="plSaveTeamTarget(this.value)" onblur="plSaveTeamTarget(this.value)" onkeydown="if(event.key==='Enter'){this.blur();}" style="font-size:15px;padding:5px 10px;">
         <div style="font-size:12px;color:#676879;">฿ / เดือน</div>
         ${(_sumInd&&teamTarget)?`<div style="font-size:13px;font-weight:600;color:${_sumColor};margin-left:8px;">${_sumIcon} รายคนรวม ${Math.round(_sumInd).toLocaleString('en-US')}฿ — ${_sumMsg}</div>`:''}
       </div>
