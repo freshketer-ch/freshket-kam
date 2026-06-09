@@ -2852,14 +2852,15 @@ function renderPipeline(){
     const acctGMV=_findGMVAcct(c._acct);
     const acctRR=acctGMV?acctGMV.runrate:null;
     return`<tr>
-      <td><div style="font-size:13px;font-weight:500;color:#1d2026;">${c.title||'—'}</div>${c._acct?`<div style="font-size:12px;color:#0073ea;margin-top:2px;font-weight:500;">${c._acct}</div>`:''}<div style="font-size:11px;color:#676879;margin-top:2px;display:flex;align-items:center;gap:4px;"><span style="width:6px;height:6px;border-radius:50%;background:${dot};display:inline-block;"></span>${c._staff}${c.category?' · '+c.category:''}</div></td>
+      <td><div style="font-size:13px;font-weight:500;color:#1d2026;">${c.title||'—'}</div>${c._acct?`<div style="font-size:12px;color:#0073ea;margin-top:2px;font-weight:500;">${c._acct}</div>`:''}</td>
+      <td><div style="display:flex;align-items:center;gap:6px;"><span style="width:8px;height:8px;border-radius:50%;background:${dot};flex-shrink:0;display:inline-block;"></span><div><div style="font-size:12px;font-weight:600;color:#1d2026;">${c._staff}</div>${c.category?`<div style="font-size:11px;color:#676879;">${c.category}</div>`:''}</div></div></td>
       <td><span class="pl-status ${stCls}">${c._st}</span></td>
       <td style="text-align:right;font-weight:500;">${c.value?Math.round(c.value).toLocaleString():'—'}</td>
       <td style="text-align:right;font-weight:600;color:#0073ea;">${acctRR?Math.round(acctRR).toLocaleString():'—'}</td>
       <td>${bought}</td>
       <td>${lostCell}</td>
     </tr>`;
-  }).join(''):'<tr><td colspan="6" style="text-align:center;color:#c5c7d4;padding:24px;">ยังไม่มี opty cards — กด 🔶 ในหน้า Tracker เพื่อเพิ่ม</td></tr>';
+  }).join(''):'<tr><td colspan="7" style="text-align:center;color:#c5c7d4;padding:24px;">ยังไม่มี opty cards — กด 🔶 ในหน้า Tracker เพื่อเพิ่ม</td></tr>';
 
   el.innerHTML=summaryHtml+targetSettingsHtml+gapHtml+`
     <div class="pl-section">
@@ -2868,6 +2869,7 @@ function renderPipeline(){
         <table class="pl-tbl">
           <thead><tr>
             <th style="min-width:200px;">ร้าน / opty</th>
+            <th>Staff</th>
             <th>สถานะ</th>
             <th style="text-align:right;">Opp value</th>
             <th style="text-align:right;">RR ทั้งร้าน</th>
