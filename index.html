@@ -2636,6 +2636,8 @@ function plFmtInput(v){return v?Math.round(v).toLocaleString('en-US'):'';}
 function plParseInput(s){return parseFloat(String(s).replace(/,/g,''))||0;}
 function plGetLostReason(id){return _plConfigGet('lost_'+id)||'';}
 function plSaveLostReason(id,val){_plSaveConfigBg('lost_'+id,val);}
+function plGetTrend(){return parseFloat(_plConfigGet('jun_trend_'+activeTeam)||'3');}  // default +3%
+function plSaveTrend(val){const n=parseFloat(String(val).replace(/,/g,'').replace(/%/g,''));if(!isNaN(n)){_plSaveConfigBg('jun_trend_'+activeTeam,String(n));renderPipeline();}}
 function plTargetsOpen(){return localStorage.getItem('fk_pl_targets_open')!=='0';} // UI pref stays local
 function plToggleTargets(){localStorage.setItem('fk_pl_targets_open',plTargetsOpen()?'0':'1');renderPipeline();}
 function plStatusClass(s){
@@ -2678,23 +2680,11 @@ function renderPipeline(){
     }
   }
 
-  // ── Baseline: Jun MTD + P25 daily (from 3-month actual data) × remaining days ──
-  const today=new Date();
-  const daysElapsed=(today.getMonth()===5)?today.getDate():30; // June = month 5
-  const daysRemaining=Math.max(0,30-daysElapsed);
-  let junMTD=0, p25DailySum=0;
-  for(const r of allTeamGMV){
-    junMTD+=(r.Jun||0);
-    // P25 daily from 3-month actual daily data (Mar-May); fallback min(Jan-May)/30
-    const p25d=P25_DAILY[r.account_name];
-    if(p25d){
-      p25DailySum+=p25d;
-    } else {
-      const months=[r.Jan,r.Feb,r.Mar,r.Apr,r.May].filter(v=>v&&v>0);
-      if(months.length>0) p25DailySum+=Math.min(...months)/30;
-    }
-  }
-  const baseline=junMTD+(p25DailySum*daysRemaining);
+  // ── Baseline: May GMV × (1 + June trend % from last year) ──
+  const junTrendPct=plGetTrend();                        // e.g. 3  → +3%
+  const trendFactor=1+(junTrendPct/100);
+  const totalMayGMV=allTeamGMV.reduce((s,r)=>s+(r.May||0),0);
+  const baseline=totalMayGMV*trendFactor;
 
   const openOpties=allCards.filter(c=>c._st==='Open'||c._st==='Stuck');
   const openOpityVal=openOpties.reduce((s,c)=>s+(c.value||0),0);
@@ -2720,7 +2710,7 @@ function renderPipeline(){
         <div class="pl-card-val" style="color:#0073ea;">${fmtB(totalPipeline)}฿</div>
         <div style="font-size:10px;color:#676879;margin-top:6px;display:flex;flex-direction:column;gap:2px;">
           <span>📌 Baseline <strong>${fmtB(baseline)}฿</strong></span>
-          <span style="padding-left:8px;color:#888;">Jun MTD ${fmtB(junMTD)}฿ + min×${daysRemaining}d</span>
+          <span style="padding-left:8px;color:#888;">May ${fmtB(totalMayGMV)}฿ × ${junTrendPct>=0?'+':''}${junTrendPct}%</span>
           <span>🔶 Opty <strong>${fmtB(openOpityVal)}฿</strong></span>
         </div>
       </div>
@@ -2769,10 +2759,15 @@ function renderPipeline(){
       </div>
 
       ${_tgtOpen?`
-      <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:20px;border-bottom:2px solid #f0f2f5;">
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #f0f2f5;">
         <div style="font-size:14px;font-weight:700;color:#1d2026;min-width:100px;flex-shrink:0;">ทาเก็จทีม</div>
         <input class="pl-target-inp-big" type="text" inputmode="numeric" placeholder="0" value="${plFmtInput(teamTarget)}" onfocus="this.value=this.value.replace(/,/g,'')" onchange="plSaveTeamTarget(this.value)" onblur="plSaveTeamTarget(this.value)">
         <div style="font-size:12px;color:#676879;">฿ / เดือน</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:20px;border-bottom:2px solid #f0f2f5;">
+        <div style="font-size:13px;font-weight:600;color:#676879;min-width:100px;flex-shrink:0;">June Trend <span style="font-weight:400;font-size:11px;">(vs May ปีก่อน)</span></div>
+        <input class="pl-ind-inp" type="text" inputmode="decimal" placeholder="3" value="${plGetTrend()}" style="width:70px;font-size:15px;font-weight:700;padding:6px 10px;" onchange="plSaveTrend(this.value)" onblur="plSaveTrend(this.value)">
+        <div style="font-size:12px;color:#676879;">% &nbsp;→ Baseline = May GMV × ${junTrendPct>=0?'+':''}${junTrendPct}% = <strong>${fmtB(baseline)}฿</strong></div>
       </div>
       <div style="font-size:12px;font-weight:600;color:#676879;margin-bottom:12px;text-transform:uppercase;letter-spacing:.04em;">ทาเก็จรายคน</div>
       ${indTargetRows}
