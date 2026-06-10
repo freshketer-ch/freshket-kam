@@ -2432,7 +2432,7 @@ function renderAIList(){
   const sel=s=>`<option value="${s}"`;
   el.innerHTML=items.map(it=>{
     if(it.id===_editingAIId){
-      const esc=v=>(v||'').replace(/"/g,'&quot;');
+      const esc=v=>(v==null?'':String(v)).replace(/"/g,'&quot;');
       const typeOpts=['ขาย/Nego','เคส','เปิดร้านใหม่','หนี้/Finance','Visit','อื่นๆ'].map(t=>`<option value="${t}"${t===it.type?' selected':''}>${t}</option>`).join('');
       const stOpts=['กำลังดำเนินการ','รอผล','ได้แล้ว','ยกเลิก'].map(s=>`<option value="${s}"${s===it.status?' selected':''}>${s}</option>`).join('');
       return`<div class="fk-item-card" style="flex-direction:column;gap:8px;border-color:#0073ea;">
@@ -2529,7 +2529,7 @@ function renderOptyList(){
   if(!cards.length){el.innerHTML='<div style="font-size:13px;color:#c5c7d4;text-align:center;padding:12px 0;">ยังไม่มี opty cards</div>';return;}
   el.innerHTML=cards.map(c=>{
     if(c.id===_editingOptyId){
-      const esc=v=>(v||'').replace(/"/g,'&quot;');
+      const esc=v=>(v==null?'':String(v)).replace(/"/g,'&quot;');
       const inp=(id,val,ph,type='text')=>`<input id="${id}" value="${esc(val)}" placeholder="${ph}" type="${type}" style="font-size:12px;padding:6px 10px;border-radius:6px;border:1px solid #c5c7d4;font-family:'Figtree',sans-serif;width:100%;box-sizing:border-box;">`;
       return`<div class="fk-item-card" style="flex-direction:column;gap:8px;border-color:#0073ea;">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
