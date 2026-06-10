@@ -1697,7 +1697,8 @@ function gmvSetStaff(s){
   renderGMV();
 }
 function getGMVFiltered(){
-  let d=[...gmvData];
+  const teamStaff=currentStaffOrder();
+  let d=gmvData.filter(r=>teamStaff.includes(r.staff));
   if(gmvStaffFilter!=='all')d=d.filter(r=>r.staff===gmvStaffFilter);
   return d;
 }
@@ -1775,10 +1776,11 @@ function renderGMVChart(){
   if(gmvChartInstance){gmvChartInstance.destroy();gmvChartInstance=null;}
   const ctx=canvas.getContext('2d');
   const labels=[...currentMonthLabels(),'RR'];
+  const totalLabelPlugin={id:'totalLabels',afterDatasetsDraw(chart){const meta0=chart.getDatasetMeta(0);if(!meta0||!meta0.data)return;const c=chart.ctx;c.save();c.font='600 11px Figtree, sans-serif';c.fillStyle='#1d2026';c.textAlign='center';c.textBaseline='bottom';for(let i=0;i<chart.data.labels.length;i++){let total=0;chart.data.datasets.forEach(ds=>{if(ds.hidden)return;total+=(ds.data[i]||0);});if(!total)continue;const bar=meta0.data[i];if(!bar)continue;const yTop=chart.scales.y.getPixelForValue(total);c.fillText(fmt(total),bar.x,yTop-4);}c.restore();}};
   if(mode==='total'){
     const totals=currentMonths().map(m=>data.reduce((s,r)=>s+(r[m]||0),0));
     const rrVal=data.reduce((s,r)=>s+(r.runrate||0),0);
-    gmvChartInstance=new Chart(ctx,{type:'bar',data:{labels,datasets:[{label:'Team GMV',data:[...totals,rrVal],backgroundColor:['rgba(0,115,234,0.35)','rgba(0,115,234,0.35)','rgba(0,115,234,0.35)','rgba(0,115,234,0.35)','rgba(0,115,234,0.6)','rgba(0,133,77,0.6)'],borderColor:['#0073ea','#0073ea','#0073ea','#0073ea','#0073ea','#00854d'],borderWidth:2,borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>fmt(v)}}}}});
+    gmvChartInstance=new Chart(ctx,{type:'bar',data:{labels,datasets:[{label:'Team GMV',data:[...totals,rrVal],backgroundColor:['rgba(0,115,234,0.35)','rgba(0,115,234,0.35)','rgba(0,115,234,0.35)','rgba(0,115,234,0.35)','rgba(0,115,234,0.6)','rgba(0,133,77,0.6)'],borderColor:['#0073ea','#0073ea','#0073ea','#0073ea','#0073ea','#00854d'],borderWidth:2,borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:24}},plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>fmt(v)}}}},plugins:[totalLabelPlugin]});
     return;
   }
   const staffList=gmvStaffFilter==='all'?currentStaffOrder():[gmvStaffFilter];
@@ -1789,7 +1791,7 @@ function renderGMVChart(){
     const col=colors[staff]||'#999';
     return{label:staff,data:vals,backgroundColor:col+'99',borderColor:col,borderWidth:1,borderRadius:3};
   });
-  gmvChartInstance=new Chart(ctx,{type:'bar',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:12}}}},scales:{x:{stacked:mode==='stacked'},y:{stacked:mode==='stacked',ticks:{callback:v=>fmt(v)}}}}});
+  gmvChartInstance=new Chart(ctx,{type:'bar',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:24}},plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:12}}}},scales:{x:{stacked:mode==='stacked'},y:{stacked:mode==='stacked',ticks:{callback:v=>fmt(v)}}}},plugins:[totalLabelPlugin]});
 }
 function renderGMVTable(){
   let data=getGMVFiltered();
