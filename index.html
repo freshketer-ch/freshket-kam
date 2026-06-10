@@ -2548,7 +2548,7 @@ function renderOptyList(){
           </select>
           <div style="display:flex;gap:6px;">
             <button class="fk-cancel-btn" onclick="_editingOptyId='';renderOptyList()">ยกเลิก</button>
-            <button class="fk-save-btn" data-id="${c.id}" onclick="saveEditOpty(this.dataset.id)">💾 บันทึก</button>
+            <button class="fk-save-btn" data-eid="${c.id}" onclick="saveEditOpty(this.dataset.eid)">💾 บันทึก</button>
           </div>
         </div>
       </div>`;
@@ -2557,8 +2557,8 @@ function renderOptyList(){
       <div style="display:flex;align-items:center;justify-content:space-between;">
         <span style="font-size:13px;font-weight:600;color:#1d2026;">${c.title}</span>
         <div style="display:flex;gap:6px;align-items:center;">
-          <button class="fk-edit-btn" data-id="${c.id}" onclick="_editingOptyId=this.dataset.id;renderOptyList()" title="แก้ไข">✏️</button>
-          <button class="fk-del-btn" data-id="${c.id}" onclick="deleteOptyCard(this.dataset.id)">×</button>
+          <button class="fk-edit-btn" data-eid="${c.id}" onclick="_editingOptyId=this.dataset.eid;renderOptyList()" title="แก้ไข">✏️</button>
+          <button class="fk-del-btn" data-eid="${c.id}" onclick="deleteOptyCard(this.dataset.eid)">×</button>
         </div>
       </div>
       <div class="opty-card-meta">
