@@ -1278,7 +1278,8 @@ async function loadAll(){
   showLoader('กำลังโหลดข้อมูลจากเซิร์ฟเวอร์...');
   try{
     const wRows=await sbGet('fk_weeks','order=created_at.desc');
-    weeks=wRows.map(r=>({id:r.id,name:r.name}));
+    // Exclude internal KV-store keys (__gmv__, __pipeline__) so they never appear as deletable "weeks"
+    weeks=wRows.filter(r=>!String(r.id).startsWith('__')).map(r=>({id:r.id,name:r.name}));
     if(weeks.length===0){const id='w-'+Date.now();await sbUpsert('fk_weeks',{id,name:'Week 18 (28 เม.ย. – 4 พ.ค. 2026)'});weeks=[{id,name:'Week 18 (28 เม.ย. – 4 พ.ค. 2026)'}];}
     const dRows=await sbGet('fk_week_data','');
     weekDataCache={};
@@ -2141,14 +2142,14 @@ function closeGMVModal(e) {
 const _miniCharts = {};
 
 function openGMVListModal(mode) {
-  const data = (window._gmvOverride || GMV_EMBEDDED).filter(r => {
-    if (gmvStaffFilter !== 'all' && r.staff !== gmvStaffFilter) return false;
-    const m = momPct(r.Apr, r.runrate);
+  const pmk = prevMonthKey();
+  const data = getGMVFiltered().filter(r => {
+    const m = momPct(r[pmk], r.runrate);
     if (mode === 'declining') return m !== null && m < 0;
     if (mode === 'no_action') return m !== null && m < 0 && !getLatestAction(r.account_name);
     return false;
   });
-  data.sort((a, b) => (momPct(a.Apr, a.runrate) || 0) - (momPct(b.Apr, b.runrate) || 0));
+  data.sort((a, b) => (momPct(a[pmk], a.runrate) || 0) - (momPct(b[pmk], b.runrate) || 0));
 
   const title = mode === 'declining'
     ? '📉 ร้านที่ยอดลด (' + data.length + ' accounts)'
@@ -2160,7 +2161,7 @@ function openGMVListModal(mode) {
   for (const k in _miniCharts) delete _miniCharts[k];
 
   document.getElementById('gmv-list-modal-body').innerHTML = data.map((r, i) => {
-    const mom = momPct(r.Apr, r.runrate);
+    const mom = momPct(r[pmk], r.runrate);
     const momStr = mom !== null ? (mom >= 0 ? '+' : '') + mom.toFixed(1) + '%' : '—';
     const col = currentGroupColors()[r.staff] || '#e44258';
     const action = getLatestAction(r.account_name);
@@ -2177,11 +2178,11 @@ function openGMVListModal(mode) {
       +'</div>'
       +'<div style="display:flex;gap:8px;margin-bottom:8px;">'
       +'<div style="flex:1;text-align:center;background:#f9fafb;border-radius:5px;padding:4px;">'
-      +'<div style="font-size:9px;color:#999;">เม.ย.</div>'
-      +'<div style="font-size:12px;font-weight:600;">'+fmt(r.Apr)+'</div>'
+      +'<div style="font-size:9px;color:#999;">'+prevMonthLabel()+'</div>'
+      +'<div style="font-size:12px;font-weight:600;">'+fmt(r[pmk])+'</div>'
       +'</div>'
       +'<div style="flex:1;text-align:center;background:#fff3f3;border-radius:5px;padding:4px;">'
-      +'<div style="font-size:9px;color:#999;">RR พ.ค.</div>'
+      +'<div style="font-size:9px;color:#999;">RR '+mtdMonthLabel()+'</div>'
       +'<div style="font-size:12px;font-weight:600;color:#e44258;">'+fmt(r.runrate)+'</div>'
       +'</div>'
       +'</div>'
