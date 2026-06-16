@@ -2632,7 +2632,10 @@ async function deleteOptyCard(id){
 // ── Pipeline Tab — Supabase-backed config (syncs across devices) ──
 let plConfigCache={};
 let plSortCol=null, plSortDir='asc';
+let plPersonExpanded={};  // per-KAM drill-down state (UI only, not persisted)
 function plToggleSort(col){if(plSortCol===col){plSortDir=plSortDir==='asc'?'desc':'asc';}else{plSortCol=col;plSortDir='asc';}renderPipeline();}
+function plTogglePerson(s){plPersonExpanded[s]=!plPersonExpanded[s];renderPipeline();}
+function plExpandAllPersons(open){const list=currentStaffOrder();list.forEach(s=>plPersonExpanded[s]=!!open);renderPipeline();}
 function _plSortIcon(col){if(plSortCol!==col)return'<span style="opacity:.35;font-size:10px;margin-left:3px;">⇅</span>';return plSortDir==='asc'?'<span style="font-size:10px;margin-left:3px;">▲</span>':'<span style="font-size:10px;margin-left:3px;">▼</span>';}
 function _plConfigGet(key){
   if(plConfigCache[key]!==undefined&&plConfigCache[key]!=='')return plConfigCache[key];
@@ -2848,6 +2851,129 @@ function renderPipeline(){
       ${_gapRow('✓','Run rate vs Pipeline (Diff)','Run rate',totalRR,'Pipeline',totalPipeline,rrVsPipeline,'rrVsPl')}
     </div>`:'<div class="pl-section" style="margin-bottom:16px;text-align:center;color:#c5c7d4;padding:24px;font-size:13px;">กรอก Team Target เพื่อดู gap analysis</div>';
 
+  // ── Per-person summary: target vs actual(MTD) vs runrate + opty won/open ──
+  const _mtdKey=mtdMonthKey();
+  const perStaff={};
+  for(const s of staffList) perStaff[s]={mtd:0,rr:0,open:0,openV:0,won:0,wonV:0,lost:0,lostV:0};
+  for(const r of allTeamGMV){const p=perStaff[r.staff];if(p){p.mtd+=(r[_mtdKey]||0);p.rr+=(r.runrate||0);}}
+  for(const c of allCards){const p=perStaff[c._staff];if(!p)continue;
+    if(c._st==='Open'||c._st==='Stuck'){p.open++;p.openV+=(c.value||0);}
+    else if(c._st==='Won'){p.won++;p.wonV+=(c.value||0);}
+    else if(c._st==='Lost'){p.lost++;p.lostV+=(c.value||0);}}
+  const _tot={tgt:0,mtd:0,rr:0,open:0,openV:0,won:0,wonV:0,lost:0,lostV:0};
+  const ppRows=staffList.map(s=>{
+    const p=perStaff[s];const tgt=plGetIndTarget(s);
+    _tot.tgt+=tgt;_tot.mtd+=p.mtd;_tot.rr+=p.rr;_tot.open+=p.open;_tot.openV+=p.openV;_tot.won+=p.won;_tot.wonV+=p.wonV;_tot.lost+=p.lost;_tot.lostV+=p.lostV;
+    const rrPct=tgt>0?p.rr/tgt:null;
+    const gap=p.rr-tgt;
+    const winR=(p.won+p.lost)>0?p.won/(p.won+p.lost):null;
+    const dot=colMap[s]||'#c5c7d4';
+    const rrPctTxt=rrPct!==null?Math.round(rrPct*100)+'%':'—';
+    const barW=Math.min(100,Math.round((rrPct||0)*100));
+    const gapColor=gap>=0?'#2e7d32':'#c62828';
+    const exp=!!plPersonExpanded[s];
+    const myCards=allCards.filter(c=>c._staff===s).sort((a,b)=>{
+      const ord={Won:0,Open:1,Stuck:1,Lost:2};return (ord[a._st]??1)-(ord[b._st]??1)||(b.value||0)-(a.value||0);});
+    const detailRows=myCards.length?myCards.map(c=>{
+      const stCls=plStatusClass(c._st);
+      const bought=c._st==='Won'?'<span style="color:#2e7d32;font-size:11px;white-space:nowrap;">✓ ซื้อแล้ว</span>':c._st==='Lost'?'<span style="color:#e44258;font-size:11px;white-space:nowrap;">✗ ไม่ซื้อ</span>':'<span style="color:#f59f0b;font-size:11px;white-space:nowrap;">⏰ รอ</span>';
+      const lr=plGetLostReason(c.id);
+      const acctG=_findGMVAcct(c._acct);
+      const acctRR=acctG?acctG.runrate:null;
+      return`<tr style="border-top:1px solid #eef0f3;">
+        <td style="padding:6px 8px;"><div style="font-size:12px;font-weight:500;color:#1d2026;">${c.title||'—'}</div>${c._acct?`<div style="font-size:11px;color:#0073ea;">${c._acct}</div>`:''}</td>
+        <td style="padding:6px 8px;font-size:11px;color:#676879;">${c.category||'—'}</td>
+        <td style="padding:6px 8px;text-align:center;"><span class="pl-status ${stCls}">${c._st}</span></td>
+        <td style="padding:6px 8px;text-align:right;font-size:12px;font-weight:500;">${c.value?Math.round(c.value).toLocaleString():'—'}</td>
+        <td style="padding:6px 8px;text-align:right;font-size:12px;color:#0073ea;">${acctRR?Math.round(acctRR).toLocaleString():'—'}</td>
+        <td style="padding:6px 8px;text-align:center;">${bought}</td>
+        <td style="padding:6px 8px;font-size:11px;color:#676879;">${lr?String(lr).replace(/</g,'&lt;'):'—'}</td>
+      </tr>`;
+    }).join(''):`<tr><td colspan="7" style="padding:10px;text-align:center;color:#c5c7d4;font-size:12px;">ยังไม่มี opty</td></tr>`;
+    const detailHtml=`<tr class="pl-person-detail"${exp?'':' style="display:none;"'}>
+      <td colspan="8" style="padding:0;background:#fafbfc;border-bottom:2px solid #eef0f3;">
+        <div style="padding:6px 12px 12px 38px;">
+          <table style="width:100%;border-collapse:collapse;">
+            <thead><tr style="color:#999;font-size:10px;text-transform:uppercase;letter-spacing:.03em;">
+              <th align="left" style="padding:4px 8px;font-weight:600;">Opty / ร้าน</th>
+              <th align="left" style="padding:4px 8px;font-weight:600;">Category</th>
+              <th align="center" style="padding:4px 8px;font-weight:600;">สถานะ</th>
+              <th align="right" style="padding:4px 8px;font-weight:600;">Opp value</th>
+              <th align="right" style="padding:4px 8px;font-weight:600;">RR ทั้งร้าน</th>
+              <th align="center" style="padding:4px 8px;font-weight:600;">สถานะซื้อ</th>
+              <th align="left" style="padding:4px 8px;font-weight:600;">เหตุผล lost</th>
+            </tr></thead>
+            <tbody>${detailRows}</tbody>
+          </table>
+        </div>
+      </td>
+    </tr>`;
+    const summaryHtml=`<tr style="cursor:pointer;background:${exp?'#f4f8ff':'transparent'};" onclick="plTogglePerson('${s}')">
+      <td><div style="display:flex;align-items:center;gap:6px;">
+        <span style="font-size:10px;color:#888;width:12px;display:inline-block;transition:transform .15s;">${exp?'▼':'▶'}</span>
+        <span style="width:8px;height:8px;border-radius:50%;background:${dot};flex-shrink:0;display:inline-block;"></span>
+        <span style="font-size:13px;font-weight:600;color:#1d2026;">${s}</span>
+        <span style="font-size:11px;color:#c5c7d4;">(${myCards.length})</span>
+      </div></td>
+      <td style="text-align:right;font-weight:500;">${tgt?Math.round(tgt).toLocaleString():'—'}</td>
+      <td style="text-align:right;color:#676879;">${p.mtd?Math.round(p.mtd).toLocaleString():'—'}</td>
+      <td style="text-align:right;font-weight:600;color:#0073ea;">${p.rr?Math.round(p.rr).toLocaleString():'—'}</td>
+      <td style="min-width:130px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="flex:1;height:6px;background:#e0e3e9;border-radius:3px;overflow:hidden;min-width:50px;"><div style="height:100%;background:${barColor(rrPct)};width:${barW}%;border-radius:3px;"></div></div>
+          <span style="font-size:12px;font-weight:700;color:${barColor(rrPct)};min-width:38px;text-align:right;">${rrPctTxt}</span>
+        </div>
+        ${tgt>0?`<div style="font-size:10px;color:${gapColor};margin-top:3px;text-align:right;">${gap>=0?'เกินเป้า +':'ขาด '}${Math.round(Math.abs(gap)).toLocaleString('en-US')}฿</div>`:''}
+      </td>
+      <td style="text-align:center;"><span style="font-size:13px;font-weight:700;color:#f59f0b;">${p.open}</span> <span style="font-size:11px;color:#676879;">ดีล</span><div style="font-size:11px;color:#676879;">${p.openV?fmtB(p.openV)+'฿':'—'}</div></td>
+      <td style="text-align:center;"><span style="font-size:13px;font-weight:700;color:#2e7d32;">${p.won}</span> <span style="font-size:11px;color:#676879;">ดีล</span><div style="font-size:11px;color:#676879;">${p.wonV?fmtB(p.wonV)+'฿':'—'}</div></td>
+      <td style="text-align:center;font-weight:700;color:${winR===null?'#c5c7d4':winR>=0.5?'#2e7d32':'#e65100'};">${winR!==null?Math.round(winR*100)+'%':'—'}<div style="font-size:10px;font-weight:400;color:#c5c7d4;">${(p.won+p.lost)>0?p.won+'/'+(p.won+p.lost):''}</div></td>
+    </tr>`;
+    return summaryHtml+detailHtml;
+  }).join('');
+  const _totRrPct=_tot.tgt>0?_tot.rr/_tot.tgt:null;
+  const _totWin=(_tot.won+_tot.lost)>0?_tot.won/(_tot.won+_tot.lost):null;
+  const _totGap=_tot.rr-_tot.tgt;
+  const ppTotalRow=`<tr style="background:#f9fafb;border-top:2px solid #e0e3e9;">
+    <td style="font-size:13px;font-weight:700;color:#1d2026;">รวมทีม</td>
+    <td style="text-align:right;font-weight:700;">${_tot.tgt?Math.round(_tot.tgt).toLocaleString():'—'}</td>
+    <td style="text-align:right;font-weight:600;color:#676879;">${_tot.mtd?Math.round(_tot.mtd).toLocaleString():'—'}</td>
+    <td style="text-align:right;font-weight:700;color:#0073ea;">${_tot.rr?Math.round(_tot.rr).toLocaleString():'—'}</td>
+    <td style="font-weight:700;color:${barColor(_totRrPct)};">${_totRrPct!==null?Math.round(_totRrPct*100)+'%':'—'}${_tot.tgt>0?`<div style="font-size:10px;font-weight:400;color:${_totGap>=0?'#2e7d32':'#c62828'};margin-top:2px;">${_totGap>=0?'เกินเป้า +':'ขาด '}${Math.round(Math.abs(_totGap)).toLocaleString('en-US')}฿</div>`:''}</td>
+    <td style="text-align:center;font-weight:700;color:#f59f0b;">${_tot.open} ดีล<div style="font-size:11px;font-weight:400;color:#676879;">${_tot.openV?fmtB(_tot.openV)+'฿':'—'}</div></td>
+    <td style="text-align:center;font-weight:700;color:#2e7d32;">${_tot.won} ดีล<div style="font-size:11px;font-weight:400;color:#676879;">${_tot.wonV?fmtB(_tot.wonV)+'฿':'—'}</div></td>
+    <td style="text-align:center;font-weight:700;color:${_totWin===null?'#c5c7d4':_totWin>=0.5?'#2e7d32':'#e65100'};">${_totWin!==null?Math.round(_totWin*100)+'%':'—'}</td>
+  </tr>`;
+  const perPersonHtml=`
+    <div class="pl-section" style="margin-bottom:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+        <div class="pl-section-title" style="margin-bottom:0;">สรุปรายคน — target vs actual vs runrate + opty</div>
+        <div style="display:flex;gap:6px;">
+          <button onclick="plExpandAllPersons(true)" style="background:none;border:1px solid #e0e3e9;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:11px;color:#676879;font-family:'Figtree',sans-serif;">▼ กางทุกคน</button>
+          <button onclick="plExpandAllPersons(false)" style="background:none;border:1px solid #e0e3e9;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:11px;color:#676879;font-family:'Figtree',sans-serif;">▶ ซ่อนทุกคน</button>
+        </div>
+      </div>
+      <div style="font-size:11px;color:#999;margin-bottom:8px;">💡 คลิกที่ชื่อ KAM เพื่อกางดู opty ทุกดีลของคนนั้น</div>
+      <div style="overflow-x:auto;">
+        <table class="pl-tbl">
+          <thead><tr>
+            <th style="min-width:90px;">KAM</th>
+            <th style="text-align:right;">Target</th>
+            <th style="text-align:right;white-space:nowrap;">Actual (${mtdMonthLabel()} MTD)</th>
+            <th style="text-align:right;">Runrate</th>
+            <th style="min-width:130px;">% ถึงเป้า (RR)</th>
+            <th style="text-align:center;white-space:nowrap;">Opty ที่มี</th>
+            <th style="text-align:center;white-space:nowrap;">Opty ที่ทำได้</th>
+            <th style="text-align:center;">Win rate</th>
+          </tr></thead>
+          <tbody>${ppRows}${ppTotalRow}</tbody>
+        </table>
+      </div>
+      <div style="font-size:11px;color:#999;margin-top:10px;padding:0 4px;line-height:1.6;">
+        * <strong>Target</strong> = ทาเก็จรายคน · <strong>Actual</strong> = GMV จริงเดือนนี้ (MTD) · <strong>Runrate</strong> = คาดการณ์ทั้งเดือน · <strong>% ถึงเป้า</strong> = Runrate ÷ Target · <strong>Opty ที่มี</strong> = ดีลที่ยัง open/stuck · <strong>Opty ที่ทำได้</strong> = ดีลที่ปิดได้ (Won) · <strong>Win rate</strong> = Won ÷ (Won+Lost)
+      </div>
+    </div>`;
+
   // Fuzzy account name lookup for RR
   function _normAcct(s){return(s||'').replace(/บริษัท\s*/g,'').replace(/เครือ\s*/g,'').replace(/จำกัด.*/,'').replace(/\s+/g,' ').trim();}
   function _findGMVAcct(name){
@@ -2890,7 +3016,7 @@ function renderPipeline(){
     </tr>`;
   }).join(''):'<tr><td colspan="8" style="text-align:center;color:#c5c7d4;padding:24px;">ยังไม่มี opty cards — กด 🔶 ในหน้า Tracker เพื่อเพิ่ม</td></tr>';
 
-  el.innerHTML=summaryHtml+targetSettingsHtml+gapHtml+`
+  el.innerHTML=summaryHtml+targetSettingsHtml+gapHtml+perPersonHtml+`
     <div class="pl-section">
       <div class="pl-section-title">pipeline รายร้าน</div>
       <div style="overflow-x:auto;">
