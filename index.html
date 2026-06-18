@@ -1352,11 +1352,21 @@ async function loadAll(){
     // Pipeline config stored under week_id='__pipeline__'
     plConfigCache={};
     if(weekDataCache['__pipeline__']){Object.entries(weekDataCache['__pipeline__']).forEach(([k,v])=>{plConfigCache[k]=v.update||'';});}
-    // Migrate localStorage → Supabase (one-time, for existing devices)
-    if(!weekDataCache['__pipeline__']||Object.keys(weekDataCache['__pipeline__']).length===0){
-      const lsKeys=['team_target_name','team_target_ploy','jun_trend_name','jun_trend_ploy'];
-      lsKeys.forEach(k=>{const v=localStorage.getItem('fk_pl_'+k);if(v&&v!==''){plConfigCache[k]=v;_plSaveConfigBg(k,v);}});
-    }
+    // Migrate localStorage → Supabase for ANY pipeline config key not yet on the server.
+    // (Older devices kept targets like team_target_name / ind_name_* only in localStorage,
+    //  so other people's devices never saw them. Push them up once so config is shared.)
+    try{
+      for(let i=0;i<localStorage.length;i++){
+        const lk=localStorage.key(i);
+        if(!lk||!lk.startsWith('fk_pl_'))continue;
+        const key=lk.slice(6);
+        if(key==='targets_open')continue; // UI-only preference, stays local
+        const v=localStorage.getItem(lk);
+        if(v&&v!==''&&(plConfigCache[key]===undefined||plConfigCache[key]==='')){
+          plConfigCache[key]=v;_plSaveConfigBg(key,v);
+        }
+      }
+    }catch(e){console.warn('pl config migrate skipped:',e.message);}
     // Load GMV data from Supabase (stored under week_id='__gmv__')
     if(weekDataCache['__gmv__']){
       GMV_EMBEDDED.length=0;
