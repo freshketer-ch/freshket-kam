@@ -298,6 +298,18 @@ html,body{height:100%;font-family:'Figtree',sans-serif;font-size:14px;background
 .opty-card-meta{font-size:11px;color:#676879;display:flex;gap:10px;flex-wrap:wrap;margin-top:4px;}
 .opty-st-open{color:#e65100;font-weight:600;}
 .opty-st-closed{color:#00854d;font-weight:600;}
+/* โอกาส Close (probability to close) badge */
+.opty-prob{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:2px 9px;border-radius:99px;border:1px solid transparent;line-height:1.5;white-space:nowrap;}
+.opty-prob::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor;flex:none;}
+.opty-prob-high{background:#1e40af;color:#fff;border-color:#1e40af;}
+.opty-prob-high::before{background:rgba(255,255,255,.85);}
+.opty-prob-med{background:#94a3b8;color:#fff;border-color:#94a3b8;}
+.opty-prob-med::before{background:rgba(255,255,255,.85);}
+.opty-prob-low{background:#e2e8f0;color:#475569;border-color:#cbd5e1;}
+.opty-prob-dot{display:inline-block;width:8px;height:8px;border-radius:50%;flex:none;}
+.opty-prob-dot-high{background:#1e40af;}
+.opty-prob-dot-med{background:#94a3b8;}
+.opty-prob-dot-low{background:#cbd5e1;border:1px solid #94a3b8;box-sizing:border-box;}
 
 .pl-card{background:#fff;border-radius:12px;padding:16px 20px;border:1px solid #e0e3e9;flex:1;min-width:160px;}
 .pl-card-label{font-size:11px;color:#676879;font-weight:500;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;}
@@ -706,6 +718,7 @@ const DATA=[
 ["Tos","เครือ เสะเมะรุเซะ","Maintain","Low","P3","Medium","ยังไม่เคยเข้าไป visit"],
 ["Tos","บริษัท เฮอร์มีส กอล์ฟ คลับ","Uplift","Low","P3","Medium","สนามกอล์ฟ ยังมีกลุ่มสินค้าที่ไม่ซื้อ"],
 ["Tos","บริษัท 99 เรียลเอสเตท กลุ่ม","Maintain","Low","P3","Medium","แบ่งซื้อกับ Makro"],
+["Tos","บริษัท ซีบี ทีเอ เทรดดิ้ง จำกัด (สำนักงานใหญ่) & บริษัท สกาย ควิซีน กรุ๊ป จำกัด","Maintain","","","",""],
 ["Tos","บริษัท ซูกิชิ & เจริญเพิ่มพูน","Winback","Medium","P2","Hard","อยากได้สาขาพัทยากลับมา"],
 ["Tos","เครือ ไทยเบฟเวอเรจ","Uplift","Medium","P2","Medium","มี Cap สาขาใหม่ที่ยังไม่สั่ง"],
 ["Tos","บริษัท ฟอร์จูน ซิกส์","Maintain","Low","P3","Hard","ซื้อแค่ผักเต็มแล้ว ยอดลดลง"],
@@ -773,6 +786,7 @@ const DATA=[
 ["Mild","บริษัท คิทเช่นเมท & พราลีน ฟู้ด","Winback","Medium","P3","Medium","ตอนนี้เหลือ Cooking"],
 ["Mild","โรงแรมซินนามอน เรสซิเดนซ์","Maintain","","","",""],
 ["Mild","เครือ ห้างเซ็นทรัล กลุ่ม","Maintain","","","",""],
+["Mild","บริษัท รักการกิน จำกัด & บริษัท เส้นอร่อย จำกัด","Maintain","","","",""],
 ["Mild","บริษัท บลูโกลด์ คอฟฟี่","Maintain","","","",""],
 ["Mild","บริษัท ออเดรย์ กรุ๊ป & เจพี แฟมิลี่ คาเฟ่","Debt","","","",""],
 ["Mild","บริษัท อาร์เอสเอส แพชชั่น","Winback","","","","อกไก่"],
@@ -2400,7 +2414,8 @@ function buildOptyInline(rk){
   const chips=open.map(c=>{
     const title=(c.title||'').length>24?(c.title||'').slice(0,24)+'…':(c.title||'');
     const cat=c.category?` · ${c.category}`:'';
-    return`<div class="opty-chip opty-chip-open" data-rk="${rk.replace(/"/g,'&quot;')}" onclick="event.stopPropagation();openOptyModal(this.dataset.rk)">🔶 ${title}${cat}</div>`;
+    const dot=optyProbDot(plGetProb(c.id));
+    return`<div class="opty-chip opty-chip-open" data-rk="${rk.replace(/"/g,'&quot;')}" onclick="event.stopPropagation();openOptyModal(this.dataset.rk)">${dot||'🔶'} ${title}${cat}</div>`;
   }).join('');
   return`<div class="opty-inline">${chips}</div>`;
 }
@@ -2523,7 +2538,7 @@ function openOptyModal(rk){
 function closeOptyModal(e){
   if(e&&e.target!==document.getElementById('opty-modal-bg'))return;
   document.getElementById('opty-modal-bg').style.display='none';
-  ['opty-new-title','opty-new-category','opty-new-value','opty-new-deadline','opty-new-note'].forEach(id=>document.getElementById(id).value='');
+  ['opty-new-title','opty-new-category','opty-new-value','opty-new-deadline','opty-new-note','opty-new-prob'].forEach(id=>document.getElementById(id).value='');
   _editingOptyId='';
 }
 function renderOptyList(){
@@ -2542,13 +2557,16 @@ function renderOptyList(){
           <div><label style="font-size:11px;color:#676879;">Deadline</label>${inp('eopty-dl-'+c.id,c.deadline||'','','date')}</div>
         </div>
         <div><label style="font-size:11px;color:#676879;">หมายเหตุ</label><textarea id="eopty-note-${c.id}" placeholder="หมายเหตุ" rows="2" style="font-size:12px;padding:6px 10px;border-radius:6px;border:1px solid #c5c7d4;font-family:'Figtree',sans-serif;width:100%;box-sizing:border-box;resize:vertical;">${esc(c.note||'')}</textarea></div>
-        <div style="display:flex;align-items:center;gap:8px;justify-content:space-between;">
-          <select id="eopty-status-${c.id}" style="font-size:12px;padding:6px 8px;border-radius:6px;border:1px solid #c5c7d4;font-family:'Figtree',sans-serif;">
-            <option value="Open"${(c.status==='Open'||c.status==='open')?' selected':''}>Open</option>
-            <option value="Stuck"${c.status==='Stuck'?' selected':''}>Stuck</option>
-            <option value="Won"${(c.status==='Won'||c.status==='closed')?' selected':''}>Won</option>
-            <option value="Lost"${c.status==='Lost'?' selected':''}>Lost</option>
-          </select>
+        <div style="display:flex;align-items:center;gap:8px;justify-content:space-between;flex-wrap:wrap;">
+          <div style="display:flex;gap:6px;align-items:center;">
+            <select id="eopty-status-${c.id}" style="font-size:12px;padding:6px 8px;border-radius:6px;border:1px solid #c5c7d4;font-family:'Figtree',sans-serif;">
+              <option value="Open"${(c.status==='Open'||c.status==='open')?' selected':''}>Open</option>
+              <option value="Stuck"${c.status==='Stuck'?' selected':''}>Stuck</option>
+              <option value="Won"${(c.status==='Won'||c.status==='closed')?' selected':''}>Won</option>
+              <option value="Lost"${c.status==='Lost'?' selected':''}>Lost</option>
+            </select>
+            <select id="eopty-prob-${c.id}" title="โอกาส close" style="font-size:12px;padding:6px 8px;border-radius:6px;border:1px solid #c5c7d4;font-family:'Figtree',sans-serif;">${optyProbOptions(plGetProb(c.id))}</select>
+          </div>
           <div style="display:flex;gap:6px;">
             <button class="fk-cancel-btn" onclick="_editingOptyId='';renderOptyList()">ยกเลิก</button>
             <button class="fk-save-btn" data-eid="${c.id}" onclick="saveEditOpty(this.dataset.eid)">💾 บันทึก</button>
@@ -2565,6 +2583,7 @@ function renderOptyList(){
         </div>
       </div>
       <div class="opty-card-meta">
+        ${(()=>{const p=plGetProb(c.id);return p?optyProbBadge(p):'';})()}
         ${c.category?`<span>📂 ${c.category}</span>`:''}
         ${c.value?`<span>💰 ฿${Number(c.value).toLocaleString()}/เดือน</span>`:''}
         ${c.deadline?`<span>📅 ${c.deadline}</span>`:''}
@@ -2586,6 +2605,7 @@ async function saveEditOpty(id){
   found.deadline=document.getElementById('eopty-dl-'+id).value||null;
   found.note=document.getElementById('eopty-note-'+id).value.trim();
   found.status=document.getElementById('eopty-status-'+id).value;
+  const _pe=document.getElementById('eopty-prob-'+id);if(_pe)plSaveProb(id,_pe.value);
   showSyncing();
   try{
     await sbUpsert('fk_opty_cards',found);
@@ -2599,14 +2619,16 @@ async function saveNewOpty(){
   const deadline=document.getElementById('opty-new-deadline').value;
   const note=document.getElementById('opty-new-note').value.trim();
   const status=document.getElementById('opty-new-status').value;
+  const prob=document.getElementById('opty-new-prob').value;
   if(!title){alert('กรุณาใส่ชื่อ opportunity');return;}
   const card={id:'opty-'+Date.now(),row_key:_optyModalRK,title,category,value,deadline:deadline||null,note,status};
   showSyncing();
   try{
     await sbUpsert('fk_opty_cards',card);
+    if(prob)plSaveProb(card.id,prob);
     if(!optyCardsCache[_optyModalRK])optyCardsCache[_optyModalRK]=[];
     optyCardsCache[_optyModalRK].push(card);
-    ['opty-new-title','opty-new-category','opty-new-value','opty-new-deadline','opty-new-note'].forEach(id=>document.getElementById(id).value='');
+    ['opty-new-title','opty-new-category','opty-new-value','opty-new-deadline','opty-new-note','opty-new-prob'].forEach(id=>document.getElementById(id).value='');
     renderOptyList();render();renderHistory();
     showSynced();
   }catch(e){showSyncErr();console.error(e);}
@@ -2656,6 +2678,25 @@ function plFmtInput(v){return v?Math.round(v).toLocaleString('en-US'):'';}
 function plParseInput(s){return parseFloat(String(s).replace(/,/g,''))||0;}
 function plGetLostReason(id){return _plConfigGet('lost_'+id)||'';}
 function plSaveLostReason(id,val){_plSaveConfigBg('lost_'+id,val);}
+// ── โอกาส Close (probability) — stored as prob_<optyId> in __pipeline__ config (no schema change) ──
+function plGetProb(id){return _plConfigGet('prob_'+id)||'';}
+function plSaveProb(id,val){_plSaveConfigBg('prob_'+id,val||'');}
+function optyProbBadge(p){
+  if(p==='High')return'<span class="opty-prob opty-prob-high">High · 70–90%</span>';
+  if(p==='Medium')return'<span class="opty-prob opty-prob-med">Medium · 40–70%</span>';
+  if(p==='Low')return'<span class="opty-prob opty-prob-low">Low · 0–40%</span>';
+  return'';
+}
+function optyProbDot(p){
+  if(p==='High')return'<span class="opty-prob-dot opty-prob-dot-high" title="High (70-90%)"></span>';
+  if(p==='Medium')return'<span class="opty-prob-dot opty-prob-dot-med" title="Medium (40-70%)"></span>';
+  if(p==='Low')return'<span class="opty-prob-dot opty-prob-dot-low" title="Low (0-40%)"></span>';
+  return'';
+}
+function optyProbOptions(sel){
+  const o=(v,l)=>`<option value="${v}"${sel===v?' selected':''}>${l}</option>`;
+  return o('','— เลือกโอกาส close —')+o('High','High (70-90%)')+o('Medium','Medium (40-70%)')+o('Low','Low (0-40%)');
+}
 function plGetTrend(){return parseFloat(_plConfigGet('jun_trend_'+activeTeam)||'3');}  // default +3%
 function plSaveTrend(val){const n=parseFloat(String(val).replace(/,/g,'').replace(/%/g,''));if(!isNaN(n)){_plSaveConfigBg('jun_trend_'+activeTeam,String(n));renderPipeline();}}
 function plTargetsOpen(){return localStorage.getItem('fk_pl_targets_open')!=='0';} // UI pref stays local
@@ -2884,12 +2925,13 @@ function renderPipeline(){
         <td style="padding:6px 8px;"><div style="font-size:12px;font-weight:500;color:#1d2026;">${c.title||'—'}</div>${c._acct?`<div style="font-size:11px;color:#0073ea;">${c._acct}</div>`:''}</td>
         <td style="padding:6px 8px;font-size:11px;color:#676879;">${c.category||'—'}</td>
         <td style="padding:6px 8px;text-align:center;"><span class="pl-status ${stCls}">${c._st}</span></td>
+        <td style="padding:6px 8px;text-align:center;">${optyProbBadge(plGetProb(c.id))||'<span style="color:#c5c7d4;font-size:11px;">—</span>'}</td>
         <td style="padding:6px 8px;text-align:right;font-size:12px;font-weight:500;">${c.value?Math.round(c.value).toLocaleString():'—'}</td>
         <td style="padding:6px 8px;text-align:right;font-size:12px;color:#0073ea;">${acctRR?Math.round(acctRR).toLocaleString():'—'}</td>
         <td style="padding:6px 8px;text-align:center;">${bought}</td>
         <td style="padding:6px 8px;font-size:11px;color:#676879;">${lr?String(lr).replace(/</g,'&lt;'):'—'}</td>
       </tr>`;
-    }).join(''):`<tr><td colspan="7" style="padding:10px;text-align:center;color:#c5c7d4;font-size:12px;">ยังไม่มี opty</td></tr>`;
+    }).join(''):`<tr><td colspan="8" style="padding:10px;text-align:center;color:#c5c7d4;font-size:12px;">ยังไม่มี opty</td></tr>`;
     const detailHtml=`<tr class="pl-person-detail"${exp?'':' style="display:none;"'}>
       <td colspan="8" style="padding:0;background:#fafbfc;border-bottom:2px solid #eef0f3;">
         <div style="padding:6px 12px 12px 38px;">
@@ -2898,6 +2940,7 @@ function renderPipeline(){
               <th align="left" style="padding:4px 8px;font-weight:600;">Opty / ร้าน</th>
               <th align="left" style="padding:4px 8px;font-weight:600;">Category</th>
               <th align="center" style="padding:4px 8px;font-weight:600;">สถานะ</th>
+              <th align="center" style="padding:4px 8px;font-weight:600;">โอกาส close</th>
               <th align="right" style="padding:4px 8px;font-weight:600;">Opp value</th>
               <th align="right" style="padding:4px 8px;font-weight:600;">RR ทั้งร้าน</th>
               <th align="center" style="padding:4px 8px;font-weight:600;">สถานะซื้อ</th>
@@ -3009,12 +3052,13 @@ function renderPipeline(){
       <td><div style="font-size:12px;color:#676879;">${c.category||'—'}</div></td>
       <td><div style="display:flex;align-items:center;gap:6px;"><span style="width:8px;height:8px;border-radius:50%;background:${dot};flex-shrink:0;display:inline-block;"></span><div style="font-size:12px;font-weight:600;color:#1d2026;">${c._staff}</div></div></td>
       <td><span class="pl-status ${stCls}">${c._st}</span></td>
+      <td style="text-align:center;">${optyProbBadge(plGetProb(c.id))||'<span style="color:#c5c7d4;font-size:12px;">—</span>'}</td>
       <td style="text-align:right;font-weight:500;">${c.value?Math.round(c.value).toLocaleString():'—'}</td>
       <td style="text-align:right;font-weight:600;color:#0073ea;">${acctRR?Math.round(acctRR).toLocaleString():'—'}</td>
       <td>${bought}</td>
       <td>${lostCell}</td>
     </tr>`;
-  }).join(''):'<tr><td colspan="8" style="text-align:center;color:#c5c7d4;padding:24px;">ยังไม่มี opty cards — กด 🔶 ในหน้า Tracker เพื่อเพิ่ม</td></tr>';
+  }).join(''):'<tr><td colspan="9" style="text-align:center;color:#c5c7d4;padding:24px;">ยังไม่มี opty cards — กด 🔶 ในหน้า Tracker เพื่อเพิ่ม</td></tr>';
 
   el.innerHTML=summaryHtml+targetSettingsHtml+gapHtml+perPersonHtml+`
     <div class="pl-section">
@@ -3026,6 +3070,7 @@ function renderPipeline(){
             <th>Category</th>
             <th style="cursor:pointer;user-select:none;white-space:nowrap;" onclick="plToggleSort('staff')">Staff${_plSortIcon('staff')}</th>
             <th style="cursor:pointer;user-select:none;white-space:nowrap;" onclick="plToggleSort('status')">สถานะ${_plSortIcon('status')}</th>
+            <th style="text-align:center;white-space:nowrap;">โอกาส close</th>
             <th style="text-align:right;">Opp value</th>
             <th style="text-align:right;">RR ทั้งร้าน</th>
             <th>สถานะซื้อ</th>
@@ -3168,6 +3213,15 @@ loadAll().then(()=>{
             <option value="Lost">Lost</option>
           </select>
         </div>
+      </div>
+      <div class="fk-form-row">
+        <label>โอกาส Close (โอกาสปิดดีลสำเร็จ)</label>
+        <select id="opty-new-prob">
+          <option value="">— เลือกโอกาส close —</option>
+          <option value="High">High (70-90%)</option>
+          <option value="Medium">Medium (40-70%)</option>
+          <option value="Low">Low (0-40%)</option>
+        </select>
       </div>
       <div class="fk-form-row">
         <label>Note</label>
