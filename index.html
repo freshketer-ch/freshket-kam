@@ -209,6 +209,51 @@ html,body{height:100%;font-family:'Figtree',sans-serif;font-size:14px;background
 .gmv-wrap{display:none;flex-direction:column;flex:1;overflow:hidden;min-height:0;}
 .gmv-wrap.show{display:flex;}
 .gmv-scroll{overflow-y:auto;flex:1;padding:20px;background:#f4f5f7;}
+/* ===== Action Tracker tab ===== */
+.action-wrap{display:none;flex-direction:column;flex:1;overflow:hidden;min-height:0;}
+.action-wrap.show{display:flex;}
+.at-scroll{overflow-y:auto;flex:1;padding:20px;background:#f4f5f7;}
+.at-toolbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px;}
+.at-seg{display:inline-flex;background:#eceef2;border-radius:9px;padding:3px;}
+.at-seg button{border:0;background:transparent;font-family:inherit;font-size:13px;font-weight:600;color:#676879;padding:6px 16px;border-radius:7px;cursor:pointer;}
+.at-seg button.on{background:#fff;color:#0073ea;box-shadow:0 1px 3px rgba(0,0,0,.12);}
+.at-period{display:flex;align-items:center;gap:8px;font-size:13px;color:#676879;}
+.at-period select{font-family:inherit;font-size:13px;padding:6px 10px;border:1px solid #d0d4dc;border-radius:7px;background:#fff;}
+.at-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px;}
+.at-kpi{background:#fff;border:1px solid #e0e3e9;border-radius:13px;padding:14px 16px;}
+.at-kpi .k{font-size:11px;color:#676879;font-weight:600;text-transform:uppercase;letter-spacing:.3px;}
+.at-kpi .v{font-size:25px;font-weight:800;margin-top:4px;line-height:1;}
+.at-kpi .d{font-size:11px;color:#9aa0ad;margin-top:5px;}
+.at-kpi.accent .v{color:#0073ea;}.at-kpi.visit .v{color:#283593;}.at-kpi.good .v{color:#00854d;}
+.at-card{background:#fff;border:1px solid #e0e3e9;border-radius:14px;padding:6px 4px 8px;overflow-x:auto;}
+.at-table{width:100%;border-collapse:collapse;font-size:13px;}
+.at-table th,.at-table td{padding:11px 12px;text-align:center;border-bottom:1px solid #f0f1f4;}
+.at-table th{font-size:11px;color:#676879;font-weight:700;text-transform:uppercase;letter-spacing:.3px;background:#fafbfc;}
+.at-table th.l,.at-table td.l{text-align:left;}
+.at-table tbody tr:last-child td{border-bottom:0;}
+.at-table tbody tr:hover{background:#f8fafd;}
+.at-who{display:flex;align-items:center;gap:9px;font-weight:700;}
+.at-dot{width:11px;height:11px;border-radius:3px;flex:none;}
+.at-big{font-size:18px;font-weight:800;}
+.at-muted{color:#c5c7d4;}
+.at-types{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;}
+.at-tc{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:6px;line-height:1.6;white-space:nowrap;}
+.at-t-sell{background:#e3f0ff;color:#0058b8;}.at-t-case{background:#fde9ef;color:#b3134e;}
+.at-t-new{background:#e6f7ec;color:#1c8a4d;}.at-t-debt{background:#fff0e0;color:#b25a00;}
+.at-t-visit{background:#e8eaf6;color:#283593;}.at-t-other{background:#eef0f3;color:#5a6072;}
+.at-vp{display:flex;flex-direction:column;gap:4px;min-width:140px;}
+.at-vp .num{font-size:13px;font-weight:700;}.at-vp .num small{color:#9aa0ad;font-weight:600;}
+.at-bar{height:7px;border-radius:99px;background:#eceef2;overflow:hidden;}
+.at-bar>i{display:block;height:100%;border-radius:99px;}
+.at-fill-good{background:#00c875;}.at-fill-mid{background:#fdab3d;}.at-fill-low{background:#e44258;}
+.at-pct{font-size:11px;font-weight:700;}
+.at-pct.good{color:#00854d;}.at-pct.mid{color:#b25a00;}.at-pct.low{color:#c1304a;}
+.at-tgt-input{width:50px;text-align:center;font-family:inherit;font-size:13px;font-weight:700;border:1px solid #b9c7e0;border-radius:6px;padding:4px;background:#f5f8ff;}
+.at-tgt-ro{font-size:12px;color:#9aa0ad;font-weight:600;line-height:1.4;display:inline-block;}
+.at-tgt-ro b{color:#5a6072;font-size:15px;}
+.at-table tfoot td{font-weight:800;background:#fafbfc;border-top:2px solid #e0e3e9;}
+.at-legend{font-size:11px;color:#9aa0ad;margin-top:12px;display:flex;gap:14px;flex-wrap:wrap;align-items:center;}
+.at-legend b{color:#676879;}
 .gmv-toolbar{display:flex;align-items:center;gap:10px;padding:10px 20px;background:#fff;border-bottom:1px solid #e0e3e9;flex-shrink:0;flex-wrap:wrap;}
 .gmv-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:14px;margin-bottom:20px;}
 .gmv-card{background:#fff;border-radius:10px;padding:16px;border:1px solid #e0e3e9;position:relative;overflow:hidden;}
@@ -364,6 +409,7 @@ html,body{height:100%;font-family:'Figtree',sans-serif;font-size:14px;background
 <div class="nav-tabs">
   <div class="nav-tab active" id="tab-tracker" onclick="switchTab('tracker')">📋 Tracker</div>
   <div class="nav-tab" id="tab-history" onclick="switchTab('history')">🕐 ประวัติรายสัปดาห์</div>
+  <div class="nav-tab" id="tab-action" onclick="switchTab('action')">📌 Action Tracker</div>
   <div class="nav-tab" id="tab-gmv" onclick="switchTab('gmv')">📊 GMV Monitor</div>
   <div class="nav-tab" id="tab-pipeline" onclick="switchTab('pipeline')">📈 Pipeline</div>
 </div>
@@ -587,6 +633,11 @@ html,body{height:100%;font-family:'Figtree',sans-serif;font-size:14px;background
 <div class="gmv-wrap" id="pipeline-wrap">
   <!-- content generated by renderPipeline() -->
   <div id="pipeline-content" style="flex:1;overflow-y:auto;padding:20px;"></div>
+</div>
+
+<div class="action-wrap" id="action-wrap">
+  <!-- content generated by renderAction() -->
+  <div id="action-content" class="at-scroll"></div>
 </div>
 
 
@@ -1399,6 +1450,7 @@ function switchTeam(t){
   renderGMVChips();
   render();
   if(document.getElementById('tab-history').classList.contains('active'))renderHistory();
+  if(document.getElementById('tab-action').classList.contains('active'))renderAction();
   if(document.getElementById('tab-gmv').classList.contains('active'))renderGMV();
   if(document.getElementById('tab-pipeline').classList.contains('active'))renderPipeline();
 }
@@ -1593,12 +1645,14 @@ function exportCSV(){
 }
 
 function switchTab(tab){
-  ['tracker','history','gmv','pipeline'].forEach(t=>{document.getElementById('tab-'+t).classList.toggle('active',tab===t);});
+  ['tracker','history','action','gmv','pipeline'].forEach(t=>{document.getElementById('tab-'+t).classList.toggle('active',tab===t);});
   document.getElementById('tracker-wrap').classList.toggle('hidden',tab!=='tracker');
   document.getElementById('hv-wrap').classList.toggle('show',tab==='history');
+  document.getElementById('action-wrap').classList.toggle('show',tab==='action');
   document.getElementById('gmv-wrap').classList.toggle('show',tab==='gmv');
   document.getElementById('pipeline-wrap').classList.toggle('show',tab==='pipeline');
   if(tab==='history'){renderWeekPicker();renderHistory();}
+  if(tab==='action'){renderAction();}
   if(tab==='gmv'){setTimeout(()=>{renderGMV();document.getElementById('gmv-data-source').textContent='📊 ข้อมูล Embedded (Q2 2026)';},50);}
   if(tab==='pipeline'){renderPipeline();}
 }
@@ -2405,6 +2459,149 @@ function buildActionItemsCell(rk){
   const label=items.length?`✏️ จัดการ (${items.length})`:'+ เพิ่ม action item';
   html+=`<button class="ai-manage-btn" data-rk="${rk.replace(/"/g,'&quot;')}" onclick="openAIModal(this.dataset.rk)">${label}</button>`;
   return html;
+}
+
+/* ══════════ ACTION TRACKER TAB ══════════ */
+var atMode='week', atWeekId=null, atMonth=null;
+var AT_THMON=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+var AT_THABBR=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+var AT_TYPE_IDX={'ขาย/Nego':0,'เคส':1,'เปิดร้านใหม่':2,'หนี้/Finance':3,'Visit':4,'อื่นๆ':5};
+var AT_TYPES=[['ขาย','at-t-sell'],['เคส','at-t-case'],['เปิดร้าน','at-t-new'],['หนี้','at-t-debt'],['Visit','at-t-visit'],['อื่นๆ','at-t-other']];
+
+function _weekMonthKey(w){
+  if(!w)return'';
+  var name=w.name||'';
+  var ym=name.match(/(\d{4})/);
+  var year=ym?parseInt(ym[1],10):new Date().getFullYear();
+  if(year>2500)year-=543;
+  var wm=name.match(/(?:week|สัปดาห์|w)\s*(\d{1,2})/i);
+  if(wm){
+    var wn=parseInt(wm[1],10);
+    var jan4=new Date(year,0,4);
+    var jsDay=jan4.getDay();var isoDay=jsDay===0?7:jsDay;
+    var monday=new Date(jan4);monday.setDate(jan4.getDate()-(isoDay-1)+(wn-1)*7);
+    var thu=new Date(monday);thu.setDate(monday.getDate()+3);
+    return AT_THMON[thu.getMonth()]+' '+thu.getFullYear();
+  }
+  var lastIdx=-1,lastPos=-1,p;
+  for(var i=0;i<AT_THABBR.length;i++){p=name.lastIndexOf(AT_THABBR[i]);if(p>lastPos){lastPos=p;lastIdx=i;}}
+  if(lastIdx<0){for(var j=0;j<AT_THMON.length;j++){p=name.lastIndexOf(AT_THMON[j]);if(p>lastPos){lastPos=p;lastIdx=j;}}}
+  if(lastIdx<0)return'';
+  return AT_THMON[lastIdx]+' '+year;
+}
+function atWeekOf(wid){return weeks.find(function(w){return w.id===wid;});}
+function _weeksInMonth(monthKey){var n=weeks.filter(function(w){return _weekMonthKey(w)===monthKey;}).length;return n||1;}
+function atMonthList(){var seen={},out=[];weeks.forEach(function(w){var k=_weekMonthKey(w);if(k&&!seen[k]){seen[k]=1;out.push(k);}});return out;}
+function atGetTgt(staff){return parseFloat(_plConfigGet('visittgt_'+activeTeam+'_'+encodeURIComponent(staff))||'0')||0;}
+function atSaveTgt(staff,val){var n=parseFloat(String(val).replace(/,/g,''))||0;_plSaveConfigBg('visittgt_'+activeTeam+'_'+encodeURIComponent(staff),String(n));renderAction();}
+function atSetMode(m){atMode=m;renderAction();}
+function atSetPeriod(v){if(atMode==='week')atWeekId=v;else atMonth=v;renderAction();}
+function atFillClass(p){return p>=100?'at-fill-good':p>=60?'at-fill-mid':'at-fill-low';}
+function atPctClass(p){return p>=100?'good':p>=60?'mid':'low';}
+function atCounts(staff,filterFn){
+  var arr=[0,0,0,0,0,0];
+  for(var rk in actionItemsCache){
+    if(rk.split('||')[0]!==staff)continue;
+    actionItemsCache[rk].forEach(function(it){
+      if(!filterFn(it))return;
+      var idx=AT_TYPE_IDX[it.type];if(idx===undefined)idx=5;
+      arr[idx]++;
+    });
+  }
+  return arr;
+}
+function renderAction(){
+  var staffOrder=currentStaffOrder(),colors=currentGroupColors();
+  if(atMode==='week'){
+    if(!atWeekId||!weeks.some(function(w){return w.id===atWeekId;}))atWeekId=activeWeekId||(weeks[0]&&weeks[0].id)||null;
+  }else{
+    var ml=atMonthList();
+    if(!atMonth||ml.indexOf(atMonth)<0){
+      var curMonth=_weekMonthKey(atWeekOf(activeWeekId));
+      atMonth=(ml.indexOf(curMonth)>=0?curMonth:(ml[0]||null));
+    }
+  }
+  var filterFn,wim=1,periodMonthKey='';
+  if(atMode==='week'){
+    var wid=atWeekId;
+    filterFn=function(it){return(it.week_id||activeWeekId)===wid;};
+    periodMonthKey=_weekMonthKey(atWeekOf(wid));
+    wim=_weeksInMonth(periodMonthKey);
+  }else{
+    var mk=atMonth;
+    filterFn=function(it){return _weekMonthKey(atWeekOf(it.week_id||activeWeekId))===mk;};
+  }
+  var periodOpts;
+  if(atMode==='week'){
+    periodOpts=weeks.map(function(w){return'<option value="'+w.id+'"'+(w.id===atWeekId?' selected':'')+'>'+w.name+'</option>';}).join('');
+  }else{
+    periodOpts=atMonthList().map(function(k){return'<option value="'+k+'"'+(k===atMonth?' selected':'')+'>'+k+'</option>';}).join('');
+  }
+  var teamName=activeTeam==='ploy'?'Team Ploy':'Team Name';
+  var periodLbl=atMode==='week'?'สัปดาห์:':'เดือน:';
+  var thTgt=atMode==='week'?'เป้าเฉลี่ย<br>/ สัปดาห์':'Target visit<br>/ เดือน';
+  var totAI=0,totVisit=0,totTgt=0,rows='',active=0;
+  staffOrder.forEach(function(s){
+    var d=atCounts(s,filterFn);
+    var ai=d.reduce(function(a,b){return a+b;},0);
+    var visit=d[4];
+    if(ai>0)active++;
+    var mtgt=atGetTgt(s);
+    var tgt=atMode==='week'?Math.round(mtgt/wim):mtgt;
+    var pct=tgt?Math.round(visit/tgt*100):0;
+    totAI+=ai;totVisit+=visit;totTgt+=tgt;
+    var chips=AT_TYPES.map(function(t,i){return d[i]?'<span class="at-tc '+t[1]+'">'+t[0]+' '+d[i]+'</span>':'';}).join('');
+    var col=colors[s]||'#999';
+    var es=s.replace(/'/g,"\\'");
+    var tgtCell=atMode==='month'
+      ?'<input class="at-tgt-input" value="'+mtgt+'" onchange="atSaveTgt(\''+es+'\',this.value)">'
+      :'<span class="at-tgt-ro">≈ <b>'+tgt+'</b><br><span style="font-size:10px;">('+mtgt+'÷'+wim+' วีค)</span></span>';
+    rows+='<tr>'+
+      '<td class="l"><span class="at-who"><span class="at-dot" style="background:'+col+'"></span>'+s+'</span></td>'+
+      '<td><span class="at-big">'+ai+'</span></td>'+
+      '<td><div class="at-types">'+(chips||'<span class="at-muted">—</span>')+'</div></td>'+
+      '<td><span class="at-big" style="color:#283593">'+visit+'</span></td>'+
+      '<td>'+tgtCell+'</td>'+
+      '<td><div class="at-vp"><div class="num">'+visit+' <small>/ '+tgt+'</small> <span class="at-pct '+atPctClass(pct)+'">'+pct+'%</span></div>'+
+      '<div class="at-bar"><i class="'+atFillClass(pct)+'" style="width:'+Math.min(pct,100)+'%"></i></div></div></td>'+
+      '</tr>';
+  });
+  var tp=totTgt?Math.round(totVisit/totTgt*100):0;
+  var tfoot='<tr><td class="l">รวมทั้งทีม</td>'+
+    '<td><span class="at-big">'+totAI+'</span></td><td></td>'+
+    '<td><span class="at-big" style="color:#283593">'+totVisit+'</span></td>'+
+    '<td>'+totTgt+'</td>'+
+    '<td><span class="at-pct '+atPctClass(tp)+'">'+tp+'%</span></td></tr>';
+  var kpis=
+    '<div class="at-kpi accent"><div class="k">Action items</div><div class="v">'+totAI+'</div><div class="d">'+(atMode==='week'?'สัปดาห์นี้':'เดือนนี้')+'</div></div>'+
+    '<div class="at-kpi visit"><div class="k">Visit ที่ทำได้</div><div class="v">'+totVisit+'</div><div class="d">จาก '+(atMode==='week'?'เป้าเฉลี่ย':'เป้าเดือน')+' '+totTgt+'</div></div>'+
+    '<div class="at-kpi good"><div class="k">% บรรลุ visit</div><div class="v">'+tp+'%</div><div class="d">ทั้งทีม</div></div>'+
+    '<div class="at-kpi"><div class="k">น้องที่ active</div><div class="v">'+active+'<small style="font-size:14px;color:#9aa0ad">/'+staffOrder.length+'</small></div><div class="d">มี action</div></div>'+
+    '<div class="at-kpi"><div class="k">เฉลี่ย/คน</div><div class="v">'+(staffOrder.length?(totAI/staffOrder.length).toFixed(1):'0')+'</div><div class="d">action items</div></div>';
+  var html=
+    '<div class="at-toolbar">'+
+      '<div class="at-seg">'+
+        '<button class="'+(atMode==='week'?'on':'')+'" onclick="atSetMode(\'week\')">รายสัปดาห์</button>'+
+        '<button class="'+(atMode==='month'?'on':'')+'" onclick="atSetMode(\'month\')">รายเดือน</button>'+
+      '</div>'+
+      '<div class="at-period"><span>'+periodLbl+'</span>'+
+        '<select onchange="atSetPeriod(this.value)">'+periodOpts+'</select></div>'+
+      '<span class="teampill" style="margin-left:auto;font-size:12px;color:#676879;background:#fff;border:1px solid #e0e3e9;border-radius:99px;padding:5px 13px;">ทีม: '+teamName+'</span>'+
+    '</div>'+
+    '<div class="at-kpis">'+kpis+'</div>'+
+    '<div class="at-card"><table class="at-table"><thead><tr>'+
+      '<th class="l">น้อง</th><th>Action items<br>ทั้งหมด</th><th>แยกตามประเภท</th>'+
+      '<th>Visit<br>ที่ทำได้</th><th>'+thTgt+'</th><th>ความคืบหน้า visit</th>'+
+    '</tr></thead><tbody>'+rows+'</tbody><tfoot>'+tfoot+'</tfoot></table></div>'+
+    '<div class="at-legend"><span><b>ประเภท:</b></span>'+
+      '<span><span class="at-tc at-t-sell">ขาย</span> ขาย/Nego</span>'+
+      '<span><span class="at-tc at-t-case">เคส</span> เคส</span>'+
+      '<span><span class="at-tc at-t-new">เปิดร้าน</span> เปิดร้านใหม่</span>'+
+      '<span><span class="at-tc at-t-debt">หนี้</span> หนี้/Finance</span>'+
+      '<span><span class="at-tc at-t-visit">Visit</span> Visit</span>'+
+      '<span><span class="at-tc at-t-other">อื่นๆ</span> อื่นๆ</span>'+
+    '</div>';
+  document.getElementById('action-content').innerHTML=html;
 }
 
 function buildOptyInline(rk){
