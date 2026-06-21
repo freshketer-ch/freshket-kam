@@ -2587,7 +2587,7 @@ function renderAction(){
   var kpis=
     '<div class="at-kpi accent"><div class="k">Action items</div><div class="v">'+totAI+'</div><div class="d">'+(atMode==='week'?'สัปดาห์นี้':'เดือนนี้')+'</div></div>'+
     '<div class="at-kpi visit"><div class="k">Visit ที่ทำได้</div><div class="v">'+totVisit+'</div><div class="d">จาก '+(atMode==='week'?'เป้าเฉลี่ย':'เป้าเดือน')+' '+totTgt+'</div></div>'+
-    '<div class="at-kpi good"><div class="k">% ถึง target</div><div class="v">'+tp+'%</div><div class="d">ทั้งทีม</div></div>'+
+    '<div class="at-kpi good"><div class="k">% achieve visit target</div><div class="v">'+tp+'%</div><div class="d">ทั้งทีม</div></div>'+
     '<div class="at-kpi"><div class="k">น้องที่ active</div><div class="v">'+active+'<small style="font-size:14px;color:#9aa0ad">/'+staffOrder.length+'</small></div><div class="d">มี action</div></div>'+
     '<div class="at-kpi"><div class="k">เฉลี่ย/คน</div><div class="v">'+(staffOrder.length?(totAI/staffOrder.length).toFixed(1):'0')+'</div><div class="d">action items</div></div>';
   var html=
