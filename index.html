@@ -3159,16 +3159,16 @@ function renderPipeline(){
   // ── Per-person summary: target vs actual(MTD) vs runrate + opty won/open ──
   const _mtdKey=mtdMonthKey();
   const perStaff={};
-  for(const s of staffList) perStaff[s]={mtd:0,rr:0,open:0,openV:0,won:0,wonV:0,lost:0,lostV:0};
+  for(const s of staffList) perStaff[s]={mtd:0,rr:0,open:0,openV:0,won:0,wonV:0,lost:0,lostV:0,actWonV:0};
   for(const r of allTeamGMV){const p=perStaff[r.staff];if(p){p.mtd+=(r[_mtdKey]||0);p.rr+=(r.runrate||0);}}
   for(const c of allCards){const p=perStaff[c._staff];if(!p)continue;
     if(c._st==='Open'||c._st==='Stuck'){p.open++;p.openV+=(c.value||0);}
-    else if(c._st==='Won'){p.won++;p.wonV+=(c.value||0);}
+    else if(c._st==='Won'){p.won++;p.wonV+=(c.value||0);const a=optyGetActual(c.id);if(a)p.actWonV+=(a.a||0);}
     else if(c._st==='Lost'){p.lost++;p.lostV+=(c.value||0);}}
-  const _tot={tgt:0,mtd:0,rr:0,open:0,openV:0,won:0,wonV:0,lost:0,lostV:0};
+  const _tot={tgt:0,mtd:0,rr:0,open:0,openV:0,won:0,wonV:0,lost:0,lostV:0,actWonV:0};
   const ppRows=staffList.map(s=>{
     const p=perStaff[s];const tgt=plGetIndTarget(s);
-    _tot.tgt+=tgt;_tot.mtd+=p.mtd;_tot.rr+=p.rr;_tot.open+=p.open;_tot.openV+=p.openV;_tot.won+=p.won;_tot.wonV+=p.wonV;_tot.lost+=p.lost;_tot.lostV+=p.lostV;
+    _tot.tgt+=tgt;_tot.mtd+=p.mtd;_tot.rr+=p.rr;_tot.open+=p.open;_tot.openV+=p.openV;_tot.won+=p.won;_tot.wonV+=p.wonV;_tot.lost+=p.lost;_tot.lostV+=p.lostV;_tot.actWonV+=p.actWonV;
     const rrPct=tgt>0?p.rr/tgt:null;
     const gap=p.rr-tgt;
     const winR=(p.won+p.lost)>0?p.won/(p.won+p.lost):null;
@@ -3243,7 +3243,7 @@ function renderPipeline(){
       </td>
       <td style="text-align:center;"><span style="font-size:13px;font-weight:700;color:#f59f0b;">${p.open}</span> <span style="font-size:11px;color:#676879;">ดีล</span><div style="font-size:11px;color:#676879;">${p.openV?fmtB(p.openV)+'฿':'—'}</div></td>
       <td style="text-align:center;"><span style="font-size:13px;font-weight:700;color:#2e7d32;">${p.won}</span> <span style="font-size:11px;color:#676879;">ดีล</span><div style="font-size:11px;color:#676879;">${p.wonV?fmtB(p.wonV)+'฿':'—'}</div></td>
-      <td style="text-align:center;font-weight:700;color:${winR===null?'#c5c7d4':winR>=0.5?'#2e7d32':'#e65100'};">${winR!==null?Math.round(winR*100)+'%':'—'}<div style="font-size:10px;font-weight:400;color:#c5c7d4;">${(p.won+p.lost)>0?p.won+'/'+(p.won+p.lost):''}</div></td>
+      ${(()=>{const ap=p.wonV>0?p.actWonV/p.wonV:null;const col=p.actWonV>0?'#2e7d32':(p.won>0?'#c62828':'#c5c7d4');return`<td style="text-align:center;"><span style="font-size:13px;font-weight:700;color:${col};">${p.actWonV?fmtB(p.actWonV)+'฿':'—'}</span>${ap!==null?`<div style="font-size:10px;color:#676879;">${Math.round(ap*100)}% ของเป้า</div>`:''}</td>`;})()}
     </tr>`;
     return summaryHtml+detailHtml;
   }).join('');
@@ -3258,7 +3258,7 @@ function renderPipeline(){
     <td style="font-weight:700;color:${barColor(_totRrPct)};">${_totRrPct!==null?Math.round(_totRrPct*100)+'%':'—'}${_tot.tgt>0?`<div style="font-size:10px;font-weight:400;color:${_totGap>=0?'#2e7d32':'#c62828'};margin-top:2px;">${_totGap>=0?'เกินเป้า +':'ขาด '}${Math.round(Math.abs(_totGap)).toLocaleString('en-US')}฿</div>`:''}</td>
     <td style="text-align:center;font-weight:700;color:#f59f0b;">${_tot.open} ดีล<div style="font-size:11px;font-weight:400;color:#676879;">${_tot.openV?fmtB(_tot.openV)+'฿':'—'}</div></td>
     <td style="text-align:center;font-weight:700;color:#2e7d32;">${_tot.won} ดีล<div style="font-size:11px;font-weight:400;color:#676879;">${_tot.wonV?fmtB(_tot.wonV)+'฿':'—'}</div></td>
-    <td style="text-align:center;font-weight:700;color:${_totWin===null?'#c5c7d4':_totWin>=0.5?'#2e7d32':'#e65100'};">${_totWin!==null?Math.round(_totWin*100)+'%':'—'}</td>
+    ${(()=>{const ap=_tot.wonV>0?_tot.actWonV/_tot.wonV:null;return`<td style="text-align:center;font-weight:700;color:${_tot.actWonV>0?'#2e7d32':'#c5c7d4'};">${_tot.actWonV?fmtB(_tot.actWonV)+'฿':'—'}<div style="font-size:11px;font-weight:400;color:#676879;">${ap!==null?Math.round(ap*100)+'% ของเป้า':''}</div></td>`;})()}
   </tr>`;
   const perPersonHtml=`
     <div class="pl-section" style="margin-bottom:16px;">
@@ -3279,14 +3279,14 @@ function renderPipeline(){
             <th style="text-align:right;">Runrate</th>
             <th style="min-width:130px;">% ถึงเป้า (RR)</th>
             <th style="text-align:center;white-space:nowrap;">Opty ที่มี</th>
-            <th style="text-align:center;white-space:nowrap;">Opty ที่ทำได้</th>
-            <th style="text-align:center;">Win rate</th>
+            <th style="text-align:center;white-space:nowrap;">Expected Opty</th>
+            <th style="text-align:center;white-space:nowrap;">Actual WON Opty</th>
           </tr></thead>
           <tbody>${ppRows}${ppTotalRow}</tbody>
         </table>
       </div>
       <div style="font-size:11px;color:#999;margin-top:10px;padding:0 4px;line-height:1.6;">
-        * <strong>Target</strong> = ทาเก็จรายคน · <strong>Actual</strong> = GMV จริงเดือนนี้ (MTD) · <strong>Runrate</strong> = คาดการณ์ทั้งเดือน · <strong>% ถึงเป้า</strong> = Runrate ÷ Target · <strong>Opty ที่มี</strong> = ดีลที่ยัง open/stuck · <strong>Opty ที่ทำได้</strong> = ดีลที่ปิดได้ (Won) · <strong>Win rate</strong> = Won ÷ (Won+Lost)
+        * <strong>Target</strong> = ทาเก็จรายคน · <strong>Actual</strong> = GMV จริงเดือนนี้ (MTD) · <strong>Runrate</strong> = คาดการณ์ทั้งเดือน · <strong>% ถึงเป้า</strong> = Runrate ÷ Target · <strong>Opty ที่มี</strong> = ดีลที่ยัง open/stuck · <strong>Expected Opty</strong> = เป้า GMV ที่กรอกในดีลที่ปิด Won · <strong>Actual WON Opty</strong> = ยอดขายจริง (มิ.ย.) ของดีล Won เช็คจาก SKU id / Res id
       </div>
     </div>`;
 
