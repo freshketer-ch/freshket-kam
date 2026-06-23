@@ -3345,6 +3345,21 @@ function renderPipeline(){
   });
   if(!remainHtml)remainHtml='<tr><td colspan="6" style="text-align:center;color:#c5c7d4;padding:24px;">ไม่มี opty ที่เหลือ (open/stuck)</td></tr>';
 
+  // รวม opty ที่ close lost ทั้งหมด
+  const lostArr=allCards.filter(c=>c._st==='Lost').sort((a,b)=>{const na=(a._acct||a.title||''),nb=(b._acct||b.title||'');const cc=na.localeCompare(nb,'th');return cc!==0?cc:(b.value||0)-(a.value||0);});
+  const lostSumV=lostArr.reduce((s,c)=>s+(c.value||0),0);
+  const lostHtml=lostArr.length?lostArr.map(c=>{
+    const dot=colMap[c._staff]||'#c5c7d4';
+    const lr=plGetLostReason(c.id);
+    return`<tr>
+      <td><div style="font-size:13px;font-weight:500;color:#1d2026;">${c.title||'—'}</div>${c._acct?`<div style="font-size:12px;color:#0073ea;margin-top:2px;font-weight:500;">${c._acct}</div>`:''}</td>
+      <td><div style="font-size:12px;color:#676879;">${c.category||'—'}</div></td>
+      <td><div style="display:flex;align-items:center;gap:6px;"><span style="width:8px;height:8px;border-radius:50%;background:${dot};flex-shrink:0;display:inline-block;"></span><div style="font-size:12px;font-weight:600;color:#1d2026;">${c._staff}</div></div></td>
+      <td style="text-align:right;font-weight:500;">${c.value?Math.round(c.value).toLocaleString():'—'}</td>
+      <td><input class="pl-lost-inp" value="${(lr||'').replace(/"/g,'&quot;')}" placeholder="เหตุผล..." onchange="plSaveLostReason('${c.id}',this.value)" onblur="plSaveLostReason('${c.id}',this.value)"></td>
+    </tr>`;
+  }).join(''):'<tr><td colspan="5" style="text-align:center;color:#c5c7d4;padding:24px;">ยังไม่มี opty ที่ close lost</td></tr>';
+
   el.innerHTML=summaryHtml+targetSettingsHtml+gapHtml+perPersonHtml+`
     <div class="pl-section">
       <div class="pl-section-title">opty ที่เหลือทั้งหมด</div>
@@ -3360,6 +3375,22 @@ function renderPipeline(){
             <th style="text-align:right;">RR ทั้งร้าน</th>
           </tr></thead>
           <tbody>${remainHtml}</tbody>
+        </table>
+      </div>
+    </div>
+    <div class="pl-section">
+      <div class="pl-section-title">รวม opty ที่ close lost ทั้งหมด</div>
+      <div style="font-size:11px;color:#999;margin-bottom:8px;">ดีลที่ปิดแบบ Lost · ${lostArr.length} opty · เป้ารวมที่เสียไป ${fmtB(lostSumV)}฿</div>
+      <div style="overflow-x:auto;">
+        <table class="pl-tbl">
+          <thead><tr>
+            <th style="min-width:200px;">ร้าน / opty</th>
+            <th>Category</th>
+            <th style="white-space:nowrap;">Staff</th>
+            <th style="text-align:right;">เป้า GMV</th>
+            <th style="min-width:200px;">เหตุผล lost</th>
+          </tr></thead>
+          <tbody>${lostHtml}</tbody>
         </table>
       </div>
     </div>`;
