@@ -1327,7 +1327,20 @@ const GMV_PLOY=[{"staff":"Monet","account_name":"เครือ บ้านข
 const SUPABASE_URL='https://dntggtczirptdkdtmfpw.supabase.co';
 const SUPABASE_KEY='sb_publishable_IWqwBJKVjiApC0Ujs4GQYw_TtMXB24s';
 
-async function sbGet(t,f=''){const r=await fetch(`${SUPABASE_URL}/rest/v1/${t}?${f}`,{headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,'Content-Type':'application/json'}});if(!r.ok)throw new Error(await r.text());return r.json();}
+async function sbGet(t,f=''){
+  // Paginate via Range header — PostgREST caps each response at 1000 rows,
+  // so fetch in 1000-row pages until a short page signals the end.
+  const PAGE=1000;let all=[],from=0;
+  while(true){
+    const r=await fetch(`${SUPABASE_URL}/rest/v1/${t}?${f}`,{headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,'Content-Type':'application/json','Range-Unit':'items',Range:`${from}-${from+PAGE-1}`}});
+    if(!r.ok)throw new Error(await r.text());
+    const batch=await r.json();
+    all=all.concat(batch);
+    if(!Array.isArray(batch)||batch.length<PAGE)break;
+    from+=PAGE;
+  }
+  return all;
+}
 async function sbUpsert(t,row){const r=await fetch(`${SUPABASE_URL}/rest/v1/${t}`,{method:'POST',headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(row)});if(!r.ok)throw new Error(await r.text());}
 async function sbDelete(t,id){const r=await fetch(`${SUPABASE_URL}/rest/v1/${t}?id=eq.${encodeURIComponent(id)}`,{method:'DELETE',headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`}});if(!r.ok)throw new Error(await r.text());}
 function showLoader(msg='กำลังโหลด...'){let el=document.getElementById('sb-loader');if(!el){el=document.createElement('div');el.id='sb-loader';el.style.cssText='position:fixed;inset:0;background:rgba(255,255,255,.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;font-family:Figtree,sans-serif;gap:10px;';el.innerHTML='<div style="width:32px;height:32px;border:3px solid #e0e3e9;border-top-color:#0073ea;border-radius:50%;animation:spin .7s linear infinite;"></div><div style="font-size:14px;color:#676879;" id="sb-loader-msg"></div><style>@keyframes spin{to{transform:rotate(360deg)}}</style>';document.body.appendChild(el);}document.getElementById('sb-loader-msg').textContent=msg;el.style.display='flex';}
@@ -2925,6 +2938,7 @@ function plGetOptyType(id){return _plConfigGet('otype_'+id)||'';}
 function plSaveOptyType(id,val){_plSaveConfigBg('otype_'+id,val||'');}
 function plGetRefId(id){return _plConfigGet('refid_'+id)||'';}
 function plSaveRefId(id,val){_plSaveConfigBg('refid_'+id,val||'');}
+function optyGetActual(id){const w=weekDataCache['__actuals__'];if(!w||!w[id])return null;try{return JSON.parse(w[id].update||'');}catch(e){return null;}}
 function optyProbBadge(p){
   if(p==='High')return'<span class="opty-prob opty-prob-high">High · 70–90%</span>';
   if(p==='Medium')return'<span class="opty-prob opty-prob-med">Medium · 40–70%</span>';
@@ -3171,19 +3185,27 @@ function renderPipeline(){
       const lr=plGetLostReason(c.id);
       const acctG=_findGMVAcct(c._acct,c.account_id||ACCOUNT_ID_MAP[c._rk]);
       const acctRR=acctG?acctG.runrate:null;
+      const act=optyGetActual(c.id);
+      const actCell=(()=>{
+        if(!act)return'<span style="color:#c5c7d4;font-size:11px;">—</span>';
+        const pct=c.value>0?Math.round(act.a/c.value*100):null;
+        const col=act.a>0?'#2e7d32':(c._st==='Won'?'#c62828':'#c5c7d4');
+        return`<div style="font-weight:600;color:${col};">${Math.round(act.a).toLocaleString()}</div>${pct!==null?`<div style="font-size:10px;color:#888;">${pct}% ของเป้า</div>`:''}`;
+      })();
       return`<tr style="border-top:1px solid #eef0f3;">
         <td style="padding:6px 8px;"><div style="font-size:12px;font-weight:500;color:#1d2026;">${c.title||'—'}</div>${c._acct?`<div style="font-size:11px;color:#0073ea;">${c._acct}</div>`:''}</td>
         <td style="padding:6px 8px;font-size:11px;color:#676879;">${c.category||'—'}</td>
         <td style="padding:6px 8px;text-align:center;"><span class="pl-status ${stCls}">${c._st}</span></td>
         <td style="padding:6px 8px;text-align:center;">${optyProbBadge(plGetProb(c.id))||'<span style="color:#c5c7d4;font-size:11px;">—</span>'}</td>
         <td style="padding:6px 8px;text-align:right;font-size:12px;font-weight:500;">${c.value?Math.round(c.value).toLocaleString():'—'}</td>
+        <td style="padding:6px 8px;text-align:right;font-size:12px;">${actCell}</td>
         <td style="padding:6px 8px;text-align:right;font-size:12px;color:#0073ea;">${acctRR?Math.round(acctRR).toLocaleString():'—'}</td>
         <td style="padding:6px 8px;text-align:center;">${bought}</td>
         <td style="padding:6px 8px;font-size:11px;color:#676879;">${lr?String(lr).replace(/</g,'&lt;'):'—'}</td>
       </tr>`;
-    }).join(''):`<tr><td colspan="8" style="padding:10px;text-align:center;color:#c5c7d4;font-size:12px;">ยังไม่มี opty</td></tr>`;
+    }).join(''):`<tr><td colspan="9" style="padding:10px;text-align:center;color:#c5c7d4;font-size:12px;">ยังไม่มี opty</td></tr>`;
     const detailHtml=`<tr class="pl-person-detail"${exp?'':' style="display:none;"'}>
-      <td colspan="8" style="padding:0;background:#fafbfc;border-bottom:2px solid #eef0f3;">
+      <td colspan="9" style="padding:0;background:#fafbfc;border-bottom:2px solid #eef0f3;">
         <div style="padding:6px 12px 12px 38px;">
           <table style="width:100%;border-collapse:collapse;">
             <thead><tr style="color:#999;font-size:10px;text-transform:uppercase;letter-spacing:.03em;">
@@ -3191,7 +3213,8 @@ function renderPipeline(){
               <th align="left" style="padding:4px 8px;font-weight:600;">Category</th>
               <th align="center" style="padding:4px 8px;font-weight:600;">สถานะ</th>
               <th align="center" style="padding:4px 8px;font-weight:600;">โอกาส close</th>
-              <th align="right" style="padding:4px 8px;font-weight:600;">Opp value</th>
+              <th align="right" style="padding:4px 8px;font-weight:600;">เป้า GMV</th>
+              <th align="right" style="padding:4px 8px;font-weight:600;">ยอดจริง มิ.ย.</th>
               <th align="right" style="padding:4px 8px;font-weight:600;">RR ทั้งร้าน</th>
               <th align="center" style="padding:4px 8px;font-weight:600;">สถานะซื้อ</th>
               <th align="left" style="padding:4px 8px;font-weight:600;">เหตุผล lost</th>
@@ -3299,6 +3322,13 @@ function renderPipeline(){
     const dot=colMap[c._staff]||'#c5c7d4';
     const acctGMV=_findGMVAcct(c._acct,c.account_id||ACCOUNT_ID_MAP[c._rk]);
     const acctRR=acctGMV?acctGMV.runrate:null;
+    const act2=optyGetActual(c.id);
+    const actCell2=(()=>{
+      if(!act2)return'<span style="color:#c5c7d4;font-size:12px;">—</span>';
+      const pct=c.value>0?Math.round(act2.a/c.value*100):null;
+      const col=act2.a>0?'#2e7d32':(c._st==='Won'?'#c62828':'#c5c7d4');
+      return`<div style="font-weight:600;color:${col};">${Math.round(act2.a).toLocaleString()}</div>${pct!==null?`<div style="font-size:10px;color:#888;">${pct}% ของเป้า</div>`:''}`;
+    })();
     return`<tr>
       <td><div style="font-size:13px;font-weight:500;color:#1d2026;">${c.title||'—'}</div>${c._acct?`<div style="font-size:12px;color:#0073ea;margin-top:2px;font-weight:500;">${c._acct}</div>`:''}</td>
       <td><div style="font-size:12px;color:#676879;">${c.category||'—'}</div></td>
@@ -3306,11 +3336,12 @@ function renderPipeline(){
       <td><span class="pl-status ${stCls}">${c._st}</span></td>
       <td style="text-align:center;">${optyProbBadge(plGetProb(c.id))||'<span style="color:#c5c7d4;font-size:12px;">—</span>'}</td>
       <td style="text-align:right;font-weight:500;">${c.value?Math.round(c.value).toLocaleString():'—'}</td>
+      <td style="text-align:right;">${actCell2}</td>
       <td style="text-align:right;font-weight:600;color:#0073ea;">${acctRR?Math.round(acctRR).toLocaleString():'—'}</td>
       <td>${bought}</td>
       <td>${lostCell}</td>
     </tr>`;
-  }).join(''):'<tr><td colspan="9" style="text-align:center;color:#c5c7d4;padding:24px;">ยังไม่มี opty cards — กด 🔶 ในหน้า Tracker เพื่อเพิ่ม</td></tr>';
+  }).join(''):'<tr><td colspan="10" style="text-align:center;color:#c5c7d4;padding:24px;">ยังไม่มี opty cards — กด 🔶 ในหน้า Tracker เพื่อเพิ่ม</td></tr>';
 
   el.innerHTML=summaryHtml+targetSettingsHtml+gapHtml+perPersonHtml+`
     <div class="pl-section">
@@ -3323,7 +3354,8 @@ function renderPipeline(){
             <th style="cursor:pointer;user-select:none;white-space:nowrap;" onclick="plToggleSort('staff')">Staff${_plSortIcon('staff')}</th>
             <th style="cursor:pointer;user-select:none;white-space:nowrap;" onclick="plToggleSort('status')">สถานะ${_plSortIcon('status')}</th>
             <th style="text-align:center;white-space:nowrap;">โอกาส close</th>
-            <th style="text-align:right;">Opp value</th>
+            <th style="text-align:right;">เป้า GMV</th>
+            <th style="text-align:right;white-space:nowrap;">ยอดจริง มิ.ย.</th>
             <th style="text-align:right;">RR ทั้งร้าน</th>
             <th>สถานะซื้อ</th>
             <th>เหตุผล lost</th>
