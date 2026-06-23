@@ -3313,54 +3313,53 @@ function renderPipeline(){
     });
   }
 
-  // Opty cards table (no per-opty target)
-  const tableRows=allCards.length?allCards.map(c=>{
+  // opty ที่เหลือทั้งหมด — เฉพาะ open/stuck · จัดกลุ่มตามโอกาส close
+  const _probLabel={High:'โอกาส close สูง · 70–90%',Medium:'โอกาส close กลาง · 40–70%',Low:'โอกาส close ต่ำ · 0–40%','':'ยังไม่ระบุโอกาส close'};
+  const _probColor={High:'#2e7d32',Medium:'#e8a33d',Low:'#e44258','':'#9aa0ad'};
+  const _grp={High:[],Medium:[],Low:[],'':[]};
+  allCards.filter(c=>c._st==='Open'||c._st==='Stuck').forEach(c=>{const pk=plGetProb(c.id)||'';(_grp[pk]||_grp['']).push(c);});
+  const _optyRow=(c)=>{
     const stCls=plStatusClass(c._st);
-    const bought=c._st==='Won'?'<span class="pl-bought" style="color:#2e7d32;">✓ ซื้อแล้ว</span>':c._st==='Lost'?'<span class="pl-bought" style="color:#e44258;">✗ ไม่ซื้อ</span>':'<span class="pl-bought" style="color:#f59f0b;">⏰ รอ</span>';
-    const lostReason=plGetLostReason(c.id);
-    const lostCell=c._st==='Lost'?`<input class="pl-lost-inp" value="${(lostReason||'').replace(/"/g,'&quot;')}" placeholder="เหตุผล..." onchange="plSaveLostReason('${c.id}',this.value)" onblur="plSaveLostReason('${c.id}',this.value)">`:`<span style="color:#c5c7d4;font-size:12px;">—</span>`;
     const dot=colMap[c._staff]||'#c5c7d4';
     const acctGMV=_findGMVAcct(c._acct,c.account_id||ACCOUNT_ID_MAP[c._rk]);
     const acctRR=acctGMV?acctGMV.runrate:null;
-    const act2=optyGetActual(c.id);
-    const actCell2=(()=>{
-      if(!act2)return'<span style="color:#c5c7d4;font-size:12px;">—</span>';
-      const pct=c.value>0?Math.round(act2.a/c.value*100):null;
-      const col=act2.a>0?'#2e7d32':(c._st==='Won'?'#c62828':'#c5c7d4');
-      return`<div style="font-weight:600;color:${col};">${Math.round(act2.a).toLocaleString()}</div>${pct!==null?`<div style="font-size:10px;color:#888;">${pct}% ของเป้า</div>`:''}`;
-    })();
     return`<tr>
       <td><div style="font-size:13px;font-weight:500;color:#1d2026;">${c.title||'—'}</div>${c._acct?`<div style="font-size:12px;color:#0073ea;margin-top:2px;font-weight:500;">${c._acct}</div>`:''}</td>
       <td><div style="font-size:12px;color:#676879;">${c.category||'—'}</div></td>
       <td><div style="display:flex;align-items:center;gap:6px;"><span style="width:8px;height:8px;border-radius:50%;background:${dot};flex-shrink:0;display:inline-block;"></span><div style="font-size:12px;font-weight:600;color:#1d2026;">${c._staff}</div></div></td>
       <td><span class="pl-status ${stCls}">${c._st}</span></td>
-      <td style="text-align:center;">${optyProbBadge(plGetProb(c.id))||'<span style="color:#c5c7d4;font-size:12px;">—</span>'}</td>
       <td style="text-align:right;font-weight:500;">${c.value?Math.round(c.value).toLocaleString():'—'}</td>
-      <td style="text-align:right;">${actCell2}</td>
       <td style="text-align:right;font-weight:600;color:#0073ea;">${acctRR?Math.round(acctRR).toLocaleString():'—'}</td>
-      <td>${bought}</td>
-      <td>${lostCell}</td>
     </tr>`;
-  }).join(''):'<tr><td colspan="10" style="text-align:center;color:#c5c7d4;padding:24px;">ยังไม่มี opty cards — กด 🔶 ในหน้า Tracker เพื่อเพิ่ม</td></tr>';
+  };
+  let remainHtml='';
+  ['High','Medium','Low',''].forEach(k=>{
+    const arr=_grp[k];if(!arr.length)return;
+    arr.sort((a,b)=>{const na=(a._acct||a.title||''),nb=(b._acct||b.title||'');const cc=na.localeCompare(nb,'th');return cc!==0?cc:(b.value||0)-(a.value||0);});
+    const sumV=arr.reduce((s,c)=>s+(c.value||0),0);
+    remainHtml+=`<tr style="background:#f4f6fa;"><td colspan="6" style="padding:7px 12px;border-top:2px solid #e0e3e9;">
+      <span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${_probColor[k]};margin-right:7px;vertical-align:middle;"></span>
+      <span style="font-size:12px;font-weight:700;color:#1d2026;">${_probLabel[k]}</span>
+      <span style="font-size:11px;color:#676879;margin-left:8px;">${arr.length} opty · เป้ารวม ${fmtB(sumV)}฿</span>
+    </td></tr>`+arr.map(_optyRow).join('');
+  });
+  if(!remainHtml)remainHtml='<tr><td colspan="6" style="text-align:center;color:#c5c7d4;padding:24px;">ไม่มี opty ที่เหลือ (open/stuck)</td></tr>';
 
   el.innerHTML=summaryHtml+targetSettingsHtml+gapHtml+perPersonHtml+`
     <div class="pl-section">
-      <div class="pl-section-title">pipeline รายร้าน</div>
+      <div class="pl-section-title">opty ที่เหลือทั้งหมด</div>
+      <div style="font-size:11px;color:#999;margin-bottom:8px;">เฉพาะดีลที่ยัง open / stuck · จัดกลุ่มตามโอกาส close · ในกลุ่มเรียงตามชื่อร้านแล้วตามเป้า GMV</div>
       <div style="overflow-x:auto;">
         <table class="pl-tbl">
           <thead><tr>
             <th style="min-width:200px;">ร้าน / opty</th>
             <th>Category</th>
-            <th style="cursor:pointer;user-select:none;white-space:nowrap;" onclick="plToggleSort('staff')">Staff${_plSortIcon('staff')}</th>
-            <th style="cursor:pointer;user-select:none;white-space:nowrap;" onclick="plToggleSort('status')">สถานะ${_plSortIcon('status')}</th>
-            <th style="text-align:center;white-space:nowrap;">โอกาส close</th>
+            <th style="white-space:nowrap;">Staff</th>
+            <th style="white-space:nowrap;">สถานะ</th>
             <th style="text-align:right;">เป้า GMV</th>
-            <th style="text-align:right;white-space:nowrap;">ยอดจริง มิ.ย.</th>
             <th style="text-align:right;">RR ทั้งร้าน</th>
-            <th>สถานะซื้อ</th>
-            <th>เหตุผล lost</th>
           </tr></thead>
-          <tbody>${tableRows}</tbody>
+          <tbody>${remainHtml}</tbody>
         </table>
       </div>
     </div>`;
