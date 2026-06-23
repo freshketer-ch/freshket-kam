@@ -2741,6 +2741,7 @@ async function deleteAIItem(id){
 function openOptyModal(rk){
   _optyModalRK=rk;
   document.getElementById('opty-modal-title').textContent='Opty Cards — '+(rk.split('||')[1]||rk);
+  {const _catSel=document.getElementById('opty-new-category');if(_catSel)_catSel.innerHTML=optyCatOptions('');}
   renderOptyList();
   document.getElementById('opty-modal-bg').style.display='flex';
 }
@@ -2763,7 +2764,7 @@ function renderOptyList(){
       return`<div class="fk-item-card" style="flex-direction:column;gap:8px;border-color:#0073ea;">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
           <div><label style="font-size:11px;color:#676879;">ชื่อ Opportunity</label>${inp('eopty-title-'+c.id,c.title,'ชื่อ opportunity')}</div>
-          <div><label style="font-size:11px;color:#676879;">หมวดหมู่</label>${inp('eopty-cat-'+c.id,c.category||'','เช่น Meat, Seafood')}</div>
+          <div><label style="font-size:11px;color:#676879;">หมวดหมู่</label><select id="eopty-cat-${c.id}" style="font-size:12px;padding:6px 10px;border-radius:6px;border:1px solid #c5c7d4;font-family:'Figtree',sans-serif;width:100%;box-sizing:border-box;">${optyCatOptions(c.category||'')}</select></div>
           <div><label style="font-size:11px;color:#676879;">ประเภท</label>
             <select id="eopty-type-${c.id}" onchange="optyTypeChanged('edit','${c.id}')" style="font-size:12px;padding:6px 10px;border-radius:6px;border:1px solid #c5c7d4;font-family:'Figtree',sans-serif;width:100%;box-sizing:border-box;">
               <option value=""${!_ot?' selected':''}>— เลือก —</option>
@@ -2939,6 +2940,10 @@ function optyProbDot(p){
 function optyProbOptions(sel){
   const o=(v,l)=>`<option value="${v}"${sel===v?' selected':''}>${l}</option>`;
   return o('','— เลือกโอกาส close —')+o('High','High (70-90%)')+o('Medium','Medium (40-70%)')+o('Low','Low (0-40%)');
+}
+const OPTY_CATEGORIES=['Fruit','Meat','Fish Seafood','Veg','Frozen','Household','Dairy','Beverage','Cooking','Basic Food','Processed Food'];
+function optyCatOptions(sel){
+  return `<option value=""${!sel?' selected':''}>— เลือกหมวด —</option>`+OPTY_CATEGORIES.map(c=>`<option value="${c}"${c===sel?' selected':''}>${c}</option>`).join('');
 }
 function plGetTrend(){return parseFloat(_plConfigGet('jun_trend_'+activeTeam)||'3');}  // default +3%
 function plSaveTrend(val){const n=parseFloat(String(val).replace(/,/g,'').replace(/%/g,''));if(!isNaN(n)){_plSaveConfigBg('jun_trend_'+activeTeam,String(n));renderPipeline();}}
@@ -3453,7 +3458,7 @@ loadAll().then(()=>{
       <div class="fk-form-grid">
         <div>
           <label>Category</label>
-          <input id="opty-new-category" type="text" placeholder="เช่น SKU expansion..." />
+          <select id="opty-new-category"></select>
         </div>
         <div>
           <label>เป้า GMV (บาท, ดีลก้อนเดียว)</label>
