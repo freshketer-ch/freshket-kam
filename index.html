@@ -70,7 +70,7 @@ html,body{height:100%;font-family:'Figtree',sans-serif;font-size:14px;background
 .ch:last-child{border-right:none;}
 .ch.sort{cursor:pointer;}
 .ch.sort:hover{background:#e8f0fe;color:#0073ea;}
-.w-status{width:160px;}.w-opp{width:130px;}.w-pri{width:90px;justify-content:center;}.w-diff{width:100px;}.w-prog{width:150px;}.w-upd{width:240px;}.w-note{width:220px;}.w-mom{width:90px;flex-shrink:0;}
+.w-status{width:160px;}.w-opp{width:230px;}.w-pri{width:110px;justify-content:center;}.w-diff{width:100px;}.w-prog{width:150px;}.w-upd{width:240px;}.w-note{width:220px;}.w-mom{width:90px;flex-shrink:0;}
 .edit-row{background:#fffdf5!important;}.edit-row:hover{background:#fffbec!important;}
 .cell-editable select{width:100%;font-size:12px;padding:3px 5px;border-radius:5px;border:1px solid #ffb74d;background:#fffbf0;cursor:pointer;font-family:'Figtree',sans-serif;}
 .cell-editable select:focus{outline:none;border-color:#e65100;background:#fff;}
@@ -489,13 +489,12 @@ html,body{height:100%;font-family:'Figtree',sans-serif;font-size:14px;background
     <div class="ch ch-chk-freeze"></div>
     <div class="ch ch-acct-freeze sort" onclick="sortBy('account')">Account <span style="font-size:10px;opacity:.5;margin-left:3px;">↕</span></div>
     <div class="ch w-status sort" onclick="sortBy('status')">Status <span style="font-size:10px;opacity:.5;margin-left:3px;">↕</span></div>
-    <div class="ch w-opp sort" onclick="sortBy('opp')">Opportunity <span style="font-size:10px;opacity:.5;margin-left:3px;">↕</span></div>
-    <div class="ch w-pri">Priority</div>
+    <div class="ch w-opp">Opty</div>
+    <div class="ch w-pri sort" onclick="sortBy('mom')">MoM% <span style="font-size:10px;opacity:.5;margin-left:3px;">↕</span></div>
     <div class="ch w-diff">Difficulty</div>
     <div class="ch w-note">KA Insight</div>
     <div class="ch w-prog">Actions</div>
     <div class="ch" id="ch-upd" style="width:var(--w-upd);">Weekly Update<span class="rhandle" data-col="upd" onclick="event.stopPropagation()"></span></div>
-    <div class="ch sort" id="ch-mom" style="width:var(--w-mom);" onclick="sortBy('mom')">MoM% <span style="font-size:10px;opacity:.5;margin-left:3px;">↕</span><span class="rhandle" data-col="mom" onclick="event.stopPropagation()"></span></div>
   </div>
   <div id="grid-body"></div>
 </div>
@@ -1554,15 +1553,15 @@ function render(){
         const progOpts=PROG_OPTS.map(o=>'<option value="'+o+'"'+(progBase===o?' selected':'')+'>'+( o||'เลือก...')+'</option>').join('');
         const progReasonBadge=progReason?'<span style="font-size:9px;background:#ffebee;color:#c62828;border-radius:3px;padding:1px 5px;margin-left:3px;font-weight:600;">'+progReason+'</span>':'';
         const stCell=editMode?'<select class="cell-editable" onchange="setField(\''+k+'\',2,this.value);render()">'+ ['','Uplift','Maintain','Winback','Skip','Debt'].map(v=>'<option value="'+v+'"'+(stVal===v?' selected':'')+'>'+(v||'—')+'</option>').join('')+'</select>':stVal?'<span class="tag '+stClass+'">'+stVal+'</span>':'';
-        const oppCell=editMode?'<select class="cell-editable" onchange="setField(\''+k+'\',3,this.value);render()">'+['','High','Medium','Low'].map(v=>'<option value="'+v+'"'+(oppVal===v?' selected':'')+'>'+(v||'—')+'</option>').join('')+'</select>':oppHtml(oppVal);
-        const priCell=editMode?'<select class="cell-editable" onchange="setField(\''+k+'\',4,this.value);render()">'+['','P1','P2','P3'].map(v=>'<option value="'+v+'"'+(priVal===v?' selected':'')+'>'+(v||'—')+'</option>').join('')+'</select>':priVal?'<span class="pri '+priClass+'">'+priVal+'</span>':'';
+        const optyCell=`${buildOptyFlag(k)}${buildOptyInline(k)}`;
+        const momCell=momBadge(getGMVMoM(r[1]));
         const diffCell=editMode?'<select class="cell-editable" onchange="setField(\''+k+'\',5,this.value);render()">'+['','Easy','Medium','Hard'].map(v=>'<option value="'+v+'"'+(diffVal===v?' selected':'')+'>'+(v||'—')+'</option>').join('')+'</select>':diffHtml(diffVal);
         html+=`<div class="row${editMode?' edit-row':''}">
           <div class="cell cell-chk-freeze"><input type="checkbox" /></div>
-          <div class="cell cell-acct-freeze"><div class="acct-name">${r[1]}${buildOptyFlag(k)}</div>${buildOptyInline(k)}</div>
+          <div class="cell cell-acct-freeze"><div class="acct-name">${r[1]}</div></div>
           <div class="cell w-status${editMode?' cell-editable':''}">${stCell}</div>
-          <div class="cell w-opp${editMode?' cell-editable':''}">${oppCell}</div>
-          <div class="cell w-pri${editMode?' cell-editable':''}" style="${editMode?'justify-content:flex-start;':''}">${priCell}</div>
+          <div class="cell w-opp" style="flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:6px 8px;">${optyCell}</div>
+          <div class="cell w-pri" style="justify-content:center;">${momCell}</div>
           <div class="cell w-diff${editMode?' cell-editable':''}">${diffCell}</div>
           <div class="cell w-note" style="${editMode?'padding:4px 8px;':''}">
             ${editMode
@@ -1572,7 +1571,6 @@ function render(){
           </div>
           <div class="cell w-prog" style="padding:6px 8px;">${buildAIBadge(k)}</div>
           <div class="cell cell-upd">${buildWeekUpdCell(k)}</div>
-          <div class="cell w-mom" style="justify-content:center;">${momBadge(getGMVMoM(r[1]))}</div>
         </div>`;
       });
       html+=`<div class="add-row">+ Add ${staff} account</div>`;
