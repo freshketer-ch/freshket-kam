@@ -1664,8 +1664,12 @@ function closeWeekModal(){document.getElementById('week-modal').style.display='n
 function closeWeekModalBg(e){if(e.target.id==='week-modal')closeWeekModal();}
 function exportCSV(){
   const wd=weekData();const active=weeks.find(w=>w.id===activeWeekId);const weekName=active?active.name:'unknown';
-  const headers=['Staff','Account','Status','Opportunity','Priority','Difficulty','Action Plan','SKU Target','Progress','Weekly Update'];
-  const rows=currentDATA().map(r=>{const k=rowKey(r);const rd=wd[k]||{};return[...r.slice(0,7),rd.sku||'',rd.progress||'',rd.update||''];});
+  const headers=['Staff','Account','account_id','Status','Opportunity','Priority','Difficulty','Action Plan','SKU Target','Progress','Weekly Update'];
+  // Use getField() so KAM edits stored in dataOverrides (fk_overrides) are exported, not the stale embedded DATA.
+  // Resolve account_id from ACCOUNT_ID_MAP (team name) with a fallback to live GMV data (covers team ploy).
+  const rows=currentDATA().map(r=>{const k=rowKey(r);const rd=wd[k]||{};
+    const acctId=ACCOUNT_ID_MAP[k]||((GMV_EMBEDDED.find(g=>g.staff===r[0]&&g.account_name===r[1])||{}).account_id)||'';
+    return[getField(r,0),getField(r,1),acctId,getField(r,2),getField(r,3),getField(r,4),getField(r,5),getField(r,6),rd.sku||'',rd.progress||'',rd.update||''];});
   const csv=[headers,...rows].map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`Freshket_KAM_${weekName.replace(/[^a-zA-Z0-9ก-๙]/g,'_')}.csv`;a.click();
