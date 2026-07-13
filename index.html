@@ -1424,11 +1424,25 @@ function isUserEditing(){
   return [...document.querySelectorAll('.modal-bg,.fk-modal-bg,[id$="modal-bg"]')]
     .some(m=>m.style.display&&m.style.display!=='none');
 }
+// Auto-refresh — keeps Supabase egress low so the free-tier quota isn't blown:
+//  (1) runs every 3 min instead of 30s  → ~6x fewer requests
+//  (2) fetches ONLY the active week's rows, not the whole fk_week_data table. The heavy
+//      namespaces (__actuals__ = raw sales, __gmv__, __pipeline__) are loaded once in
+//      loadAll() and change rarely, so we never re-download them on every tick.
+//  (3) skips entirely when the tab is in the background (document.hidden) — an open tab
+//      left idle no longer keeps hammering the DB.
+// We MERGE into weekDataCache (never reset it) so the other weeks + heavy namespaces survive.
 setInterval(async()=>{
-  if(isUserEditing())return; // skip this tick; next one (30s later) will catch up
-  try{const dRows=await sbGet('fk_week_data','');weekDataCache={};dRows.forEach(r=>{if(!weekDataCache[r.week_id])weekDataCache[r.week_id]={};weekDataCache[r.week_id][r.row_key]={update:r.upd||'',sku:r.sku||'',progress:r.progress||''};});render();if(document.getElementById('tab-history')?.classList.contains('active'))renderHistory();}
-  catch(e){}
-},30000);
+  if(document.hidden)return;        // background tab → skip, biggest idle-bandwidth saver
+  if(isUserEditing())return;        // don't clobber a field the user is typing in
+  if(!activeWeekId)return;
+  try{
+    const dRows=await sbGet('fk_week_data','week_id=eq.'+encodeURIComponent(activeWeekId));
+    dRows.forEach(r=>{if(!weekDataCache[r.week_id])weekDataCache[r.week_id]={};weekDataCache[r.week_id][r.row_key]={update:r.upd||'',sku:r.sku||'',progress:r.progress||''};});
+    render();
+    if(document.getElementById('tab-history')?.classList.contains('active'))renderHistory();
+  }catch(e){}
+},180000);
 
 const STATUS_TAG={Maintain:'t-maintain',Uplift:'t-uplift',Winback:'t-winback',Unknown:'t-unknown',Skip:'t-skip',Debt:'t-debt'};
 const PROG_OPTS=['','ยังไม่เริ่ม','กำลังดำเนินการ','รอผล','ได้แล้ว','ไม่ได้'];
