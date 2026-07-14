@@ -612,16 +612,7 @@ html,body{height:100%;font-family:'Figtree',sans-serif;font-size:14px;background
       </div>
       <div style="overflow-x:auto;">
         <table class="gmv-table">
-          <thead><tr>
-            <th style="width:28px;text-align:center;">#</th>
-            <th style="min-width:220px;">Account</th>
-            <th>Staff</th>
-            <th>ม.ค.</th><th>ก.พ.</th><th>มี.ค.</th><th>พ.ค.</th>
-            <th>มิ.ย. MTD</th>
-            <th>Runrate</th>
-            <th>MoM%<br/><span style="font-size:9px;font-weight:400;">(พ.ค.→RR)</span></th>
-            <th style="min-width:130px;text-align:left;">Weekly Action</th>
-          </tr></thead>
+          <thead><tr id="gmv-thead-row"><!-- month columns built dynamically in renderGMVTable() --></tr></thead>
           <tbody id="gmv-tbody"></tbody>
         </table>
       </div>
@@ -1784,16 +1775,17 @@ const GMV_STAFF_COLORS = {
   Tos:'#d4831a',Kwang:'#e44258',Mild:'#5cb85c',
   Nitcha:'#0891b2'
 };
-const GMV_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun'];
-const GMV_MONTH_LABELS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.'];
-const GMV_MONTHS_PLOY = ['Jan','Feb','Mar','Apr','May','Jun'];
-const GMV_MONTH_LABELS_PLOY = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.'];
+const GMV_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul'];
+const GMV_MONTH_LABELS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.'];
+const GMV_MONTHS_PLOY = ['Jan','Feb','Mar','Apr','May','Jun','Jul'];
+const GMV_MONTH_LABELS_PLOY = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.'];
 function currentMonths(){return GMV_MONTHS;}
 function currentMonthLabels(){return GMV_MONTH_LABELS;}
-function prevMonthKey(){return 'May';}
-function mtdMonthKey(){return 'Jun';}
-function prevMonthLabel(){return 'พ.ค.';}
-function mtdMonthLabel(){return 'มิ.ย.';}
+// Current MTD month = July; previous complete month = June
+function prevMonthKey(){return 'Jun';}
+function mtdMonthKey(){return 'Jul';}
+function prevMonthLabel(){return 'มิ.ย.';}
+function mtdMonthLabel(){return 'ก.ค.';}
 
 let gmvData = window._gmvOverride||GMV_EMBEDDED;
 let gmvStaffFilter = 'all';
@@ -1915,11 +1907,24 @@ function renderGMVTable(){
   if(q)data=data.filter(r=>r.account_name.toLowerCase().includes(q)||(r.staff||'').toLowerCase().includes(q));
   if(alertFilt==='declining')data=data.filter(r=>momPct(r[prevMonthKey()],r.runrate)<0);
   if(alertFilt==='no_action')data=data.filter(r=>{const m=momPct(r[prevMonthKey()],r.runrate);return m!==null&&m<0&&!getLatestAction(r.account_name);});
-  if(sortMode==='mom_desc')data.sort((a,b)=>(momPct(a.Apr,a.runrate)||0)-(momPct(b.Apr,b.runrate)||0));
-  if(sortMode==='mom_asc')data.sort((a,b)=>(momPct(b.Apr,b.runrate)||0)-(momPct(a.Apr,a.runrate)||0));
-  if(sortMode==='gmv_desc')data.sort((a,b)=>(b.Apr||0)-(a.Apr||0));
+  if(sortMode==='mom_desc')data.sort((a,b)=>(momPct(a[prevMonthKey()],a.runrate)||0)-(momPct(b[prevMonthKey()],b.runrate)||0));
+  if(sortMode==='mom_asc')data.sort((a,b)=>(momPct(b[prevMonthKey()],b.runrate)||0)-(momPct(a[prevMonthKey()],a.runrate)||0));
+  if(sortMode==='gmv_desc')data.sort((a,b)=>(b[mtdMonthKey()]||0)-(a[mtdMonthKey()]||0));
   if(sortMode==='runrate_desc')data.sort((a,b)=>(b.runrate||0)-(a.runrate||0));
   document.getElementById('gmv-table-count').textContent=`${data.length} accounts`;
+  // Build header dynamically so ALL months (ม.ค.→current) are shown, none skipped.
+  const months=currentMonths(),labels=currentMonthLabels(),mtd=mtdMonthKey();
+  const monthHead=months.map((m,i)=>`<th>${labels[i]}${m===mtd?' MTD':''}</th>`).join('');
+  const theadRow=document.getElementById('gmv-thead-row');
+  if(theadRow)theadRow.innerHTML=
+    `<th style="width:28px;text-align:center;">#</th>`+
+    `<th style="min-width:220px;">Account</th>`+
+    `<th>Staff</th>`+
+    monthHead+
+    `<th>Runrate</th>`+
+    `<th>MoM%<br/><span style="font-size:9px;font-weight:400;">(${prevMonthLabel()}→RR)</span></th>`+
+    `<th style="min-width:130px;text-align:left;">Weekly Action</th>`;
+  const emptyCols=months.length+6; // #,Account,Staff,...months...,Runrate,MoM,Action
   let html='';
   data.forEach((r,i)=>{
     const mom=momPct(r[prevMonthKey()],r.runrate);
@@ -1933,15 +1938,17 @@ function renderGMVTable(){
       <td style="text-align:center;color:#c5c7d4;font-size:11px;">${i+1}</td>
       <td>${isDecline?'<span class="alert-dot"></span>':''}<span style="font-size:12px;font-weight:500;">${r.account_name}</span></td>
       <td><span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:${col};display:inline-block;"></span><span style="font-size:11px;color:#676879;">${r.staff}</span></span></td>
-      <td style="color:#676879;">${fmt(r.Jan)}</td><td style="color:#676879;">${fmt(r.Feb)}</td>
-      <td style="color:#676879;">${fmt(r.Mar)}</td><td style="font-weight:500;">${fmt(r[prevMonthKey()])}</td>
-      <td style="font-weight:500;color:#0073ea;">${fmt(r[mtdMonthKey()])}</td>
+      ${months.map(m=>{
+        if(m===mtd)return `<td style="font-weight:500;color:#0073ea;">${fmt(r[m])}</td>`;
+        if(m===prevMonthKey())return `<td style="font-weight:500;">${fmt(r[m])}</td>`;
+        return `<td style="color:#676879;">${fmt(r[m])}</td>`;
+      }).join('')}
       <td style="font-weight:600;">${fmt(r.runrate)}</td>
       <td class="${momCls}">${momStr}</td>
       <td>${actionBadge}</td>
     </tr>`;
   });
-  document.getElementById('gmv-tbody').innerHTML=html||'<tr><td colspan="11" style="text-align:center;padding:24px;color:#c5c7d4;">ไม่พบข้อมูล</td></tr>';
+  document.getElementById('gmv-tbody').innerHTML=html||`<tr><td colspan="${emptyCols}" style="text-align:center;padding:24px;color:#c5c7d4;">ไม่พบข้อมูล</td></tr>`;
 }
 function renderGMV(){gmvData=window._gmvOverride||currentGMV();
   const data=getGMVFiltered();
@@ -2205,14 +2212,16 @@ function openGMVModal(accountName) {
     actionDiv.style.display = 'none';
   }
 
-  // Chart — show all 6 months + RR
+  // Chart — show ALL months + RR (dynamic, nothing skipped)
   const canvas = document.getElementById('gmv-modal-chart');
   if (_gmvModalChart) { _gmvModalChart.destroy(); _gmvModalChart = null; }
-  const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', pml, cml+' MTD', 'RR'];
-  const vals = [r.Jan, r.Feb, r.Mar, r.Apr, r[pm], r[cm], r.runrate].map(v => v || 0);
+  const mKeys = currentMonths(), mLbls = currentMonthLabels(), mtdK = mtdMonthKey();
+  const months = mLbls.map((l,i)=> mKeys[i]===mtdK ? l+' MTD' : l).concat('RR');
+  const vals = mKeys.map(m => r[m]).concat(r.runrate).map(v => v || 0);
+  const rrIdx = vals.length - 1, mtdIdx = mKeys.indexOf(mtdK);
   const bgColors = vals.map((v, i) => {
-    if (i === 6) return col + '33';
-    if (i >= 5) return col + '99';
+    if (i === rrIdx) return col + '33';
+    if (i === mtdIdx) return col + '99';
     return col + 'cc';
   });
   _gmvModalChart = new Chart(canvas, {
@@ -2322,11 +2331,11 @@ function openGMVListModal(mode) {
       const canvas = document.getElementById('mini-chart-' + i);
       if (!canvas) return;
       const col = currentGroupColors()[r.staff] || '#e44258';
-      const vals = [r.Jan, r.Feb, r.Mar, r.Apr, r[prevMonthKey()], r[mtdMonthKey()], r.runrate].map(v => v || 0);
+      const vals = currentMonths().map(m => r[m]).concat(r.runrate).map(v => v || 0);
       _miniCharts[i] = new Chart(canvas, {
         type: 'line',
         data: {
-          labels: ['ม.ค.','ก.พ.','มี.ค.','เม.ย.',prevMonthLabel(),mtdMonthLabel(),'RR'],
+          labels: currentMonthLabels().concat('RR'),
           datasets: [{
             data: vals,
             borderColor: col,
@@ -3024,11 +3033,11 @@ function renderPipeline(){
     }
   }
 
-  // ── Baseline: May GMV × (1 + June trend % from last year) ──
+  // ── Baseline: previous complete month's GMV × (1 + trend %) ──
   const junTrendPct=plGetTrend();                        // e.g. 3  → +3%
   const trendFactor=1+(junTrendPct/100);
-  const totalMayGMV=allTeamGMV.reduce((s,r)=>s+(r.May||0),0);
-  const baseline=totalMayGMV*trendFactor;
+  const totalPrevGMV=allTeamGMV.reduce((s,r)=>s+(r[prevMonthKey()]||0),0);
+  const baseline=totalPrevGMV*trendFactor;
 
   const openOpties=allCards.filter(c=>c._st==='Open'||c._st==='Stuck');
   const openOpityVal=openOpties.reduce((s,c)=>s+(c.value||0),0);
@@ -3054,7 +3063,7 @@ function renderPipeline(){
         <div class="pl-card-val" style="color:#0073ea;">${fmtB(totalPipeline)}฿</div>
         <div style="font-size:10px;color:#676879;margin-top:6px;display:flex;flex-direction:column;gap:2px;">
           <span>📌 Baseline <strong>${fmtB(baseline)}฿</strong></span>
-          <span style="padding-left:8px;color:#888;">May ${fmtB(totalMayGMV)}฿ × ${junTrendPct>=0?'+':''}${junTrendPct}%</span>
+          <span style="padding-left:8px;color:#888;">${prevMonthLabel()} ${fmtB(totalPrevGMV)}฿ × ${junTrendPct>=0?'+':''}${junTrendPct}%</span>
           <span>🔶 Opty <strong>${fmtB(openOpityVal)}฿</strong></span>
         </div>
       </div>
