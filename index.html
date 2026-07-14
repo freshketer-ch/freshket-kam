@@ -1787,6 +1787,20 @@ function mtdMonthKey(){return 'Jul';}
 function prevMonthLabel(){return 'มิ.ย.';}
 function mtdMonthLabel(){return 'ก.ค.';}
 
+// Opty deadline filter (Pipeline page): show only opty cards whose deadline is in the
+// CURRENT month, plus cards that have no deadline yet. Previous- AND future-month
+// deadlines are hidden. "Current month" follows the page's month model (mtdMonthKey)
+// for the month, and the real calendar year for the year.
+const MONTH_NUM={Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
+function optyDeadlineInCurrentPeriod(dl){
+  if(!dl)return true;                              // no deadline yet → always show
+  const s=String(dl), y=+s.slice(0,4), m=+s.slice(5,7);
+  if(!y||!m)return true;                           // unparseable → don't hide
+  const now=new Date();
+  const curM=MONTH_NUM[mtdMonthKey()]||(now.getMonth()+1);
+  return y===now.getFullYear() && m===curM;
+}
+
 let gmvData = window._gmvOverride||GMV_EMBEDDED;
 let gmvStaffFilter = 'all';
 let gmvChartInstance = null;
@@ -3021,13 +3035,18 @@ function renderPipeline(){
   for(const s of staffList) staffRR[s]=0;
   for(const r of allTeamGMV) staffRR[r.staff]=(staffRR[r.staff]||0)+(r.runrate||0);
 
-  // Collect all opty cards for current team
+  // Collect all opty cards for current team.
+  // Deadline filter: keep only cards whose deadline is in the current month, or that
+  // have no deadline yet — previous- and future-month deadlines are hidden. This feeds
+  // the whole Pipeline page (team Pipeline card, gap analysis, per-person summary) so
+  // every number stays consistent.
   const allCards=[];
   for(const [rk,cards] of Object.entries(optyCardsCache)){
     const parts=rk.split('||');
     const staff=parts[0]||'';
     if(!staffList.includes(staff))continue;
     for(const c of cards){
+      if(!optyDeadlineInCurrentPeriod(c.deadline))continue;
       const st=plStatusLabel(c.status);
       allCards.push({...c, _rk:rk, _staff:staff, _acct:parts[1]||'', _st:st});
     }
