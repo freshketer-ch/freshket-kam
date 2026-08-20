@@ -2562,6 +2562,10 @@ function _weeksInMonth(monthKey){var n=weeks.filter(function(w){return _weekMont
 function atMonthList(){var seen={},out=[];weeks.forEach(function(w){var k=_weekMonthKey(w);if(k&&!seen[k]){seen[k]=1;out.push(k);}});return out;}
 function atGetTgt(staff){return parseFloat(_plConfigGet('visittgt_'+activeTeam+'_'+encodeURIComponent(staff))||'0')||0;}
 function atSaveTgt(staff,val){var n=parseFloat(String(val).replace(/,/g,''))||0;_plSaveConfigBg('visittgt_'+activeTeam+'_'+encodeURIComponent(staff),String(n));renderAction();}
+// co-visit: manual per-period count, keyed by team + selected week/month + staff
+function atCovisitKey(staff){var pk=atMode==='week'?atWeekId:atMonth;return'covisit_'+activeTeam+'_'+pk+'_'+encodeURIComponent(staff);}
+function atGetCovisit(staff){return parseFloat(_plConfigGet(atCovisitKey(staff))||'0')||0;}
+function atSaveCovisit(staff,val){var n=parseFloat(String(val).replace(/,/g,''))||0;_plSaveConfigBg(atCovisitKey(staff),String(n));renderAction();}
 function atSetMode(m){atMode=m;renderAction();}
 function atSetPeriod(v){if(atMode==='week')atWeekId=v;else atMonth=v;renderAction();}
 function atFillClass(p){return p>=100?'at-fill-good':p>=60?'at-fill-mid':'at-fill-low';}
@@ -2608,17 +2612,17 @@ function renderAction(){
   var teamName=activeTeam==='ploy'?'Team Ploy':'Team Name';
   var periodLbl=atMode==='week'?'สัปดาห์:':'เดือน:';
   var thTgt=atMode==='week'?'เป้าเฉลี่ย<br>/ สัปดาห์':'Target visit<br>/ เดือน';
-  var totAI=0,totVisit=0,totTgt=0,rows='',active=0;
+  var totAI=0,totVisit=0,totTgt=0,totCov=0,rows='',active=0;
   staffOrder.forEach(function(s){
     var d=atCounts(s,filterFn);
     var ai=d.reduce(function(a,b){return a+b;},0);
     var visit=d[4];
     if(ai>0)active++;
     var mtgt=atGetTgt(s);
+    var cov=atGetCovisit(s);
     var tgt=atMode==='week'?Math.round(mtgt/wim):mtgt;
     var pct=tgt?Math.round(visit/tgt*100):0;
-    totAI+=ai;totVisit+=visit;totTgt+=tgt;
-    var chips=AT_TYPES.map(function(t,i){return d[i]?'<span class="at-tc '+t[1]+'">'+t[0]+' '+d[i]+'</span>':'';}).join('');
+    totAI+=ai;totVisit+=visit;totTgt+=tgt;totCov+=cov;
     var col=colors[s]||'#999';
     var es=s.replace(/'/g,"\\'");
     var tgtCell=atMode==='month'
@@ -2626,9 +2630,8 @@ function renderAction(){
       :'<span class="at-tgt-ro">≈ <b>'+tgt+'</b><br><span style="font-size:10px;">('+mtgt+'÷'+wim+' วีค)</span></span>';
     rows+='<tr>'+
       '<td class="l"><span class="at-who"><span class="at-dot" style="background:'+col+'"></span>'+s+'</span></td>'+
-      '<td><span class="at-big">'+ai+'</span></td>'+
-      '<td><div class="at-types">'+(chips||'<span class="at-muted">—</span>')+'</div></td>'+
       '<td><span class="at-big" style="color:#283593">'+visit+'</span></td>'+
+      '<td><input class="at-tgt-input" value="'+cov+'" onchange="atSaveCovisit(\''+es+'\',this.value)"></td>'+
       '<td>'+tgtCell+'</td>'+
       '<td><div class="at-vp"><div class="num">'+visit+' <small>/ '+tgt+'</small> <span class="at-pct '+atPctClass(pct)+'">'+pct+'%</span></div>'+
       '<div class="at-bar"><i class="'+atFillClass(pct)+'" style="width:'+Math.min(pct,100)+'%"></i></div></div></td>'+
@@ -2636,12 +2639,11 @@ function renderAction(){
   });
   var tp=totTgt?Math.round(totVisit/totTgt*100):0;
   var tfoot='<tr><td class="l">รวมทั้งทีม</td>'+
-    '<td><span class="at-big">'+totAI+'</span></td><td></td>'+
     '<td><span class="at-big" style="color:#283593">'+totVisit+'</span></td>'+
+    '<td><span class="at-big">'+totCov+'</span></td>'+
     '<td>'+totTgt+'</td>'+
     '<td><span class="at-pct '+atPctClass(tp)+'">'+tp+'%</span></td></tr>';
   var kpis=
-    '<div class="at-kpi accent"><div class="k">Action items</div><div class="v">'+totAI+'</div><div class="d">'+(atMode==='week'?'สัปดาห์นี้':'เดือนนี้')+'</div></div>'+
     '<div class="at-kpi visit"><div class="k">Visit ที่ทำได้</div><div class="v">'+totVisit+'</div><div class="d">จาก '+(atMode==='week'?'เป้าเฉลี่ย':'เป้าเดือน')+' '+totTgt+'</div></div>'+
     '<div class="at-kpi good"><div class="k">% ถึง target visit</div><div class="v">'+tp+'%</div><div class="d">ทั้งทีม</div></div>'+
     '<div class="at-kpi"><div class="k">น้องที่ active</div><div class="v">'+active+'<small style="font-size:14px;color:#9aa0ad">/'+staffOrder.length+'</small></div><div class="d">มี action</div></div>'+
@@ -2658,8 +2660,8 @@ function renderAction(){
     '</div>'+
     '<div class="at-kpis">'+kpis+'</div>'+
     '<div class="at-card"><table class="at-table"><thead><tr>'+
-      '<th class="l">น้อง</th><th>Action items<br>ทั้งหมด</th><th>แยกตามประเภท</th>'+
-      '<th>Visit<br>ที่ทำได้</th><th>'+thTgt+'</th><th>ความคืบหน้า visit</th>'+
+      '<th class="l">น้อง</th>'+
+      '<th>Visit<br>ที่ทำได้</th><th>co-visit</th><th>'+thTgt+'</th><th>ความคืบหน้า visit</th>'+
     '</tr></thead><tbody>'+rows+'</tbody><tfoot>'+tfoot+'</tfoot></table></div>'+
     '<div class="at-legend"><span><b>ประเภท:</b></span>'+
       '<span><span class="at-tc at-t-sell">ขาย</span> ขาย/Nego</span>'+
